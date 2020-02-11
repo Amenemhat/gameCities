@@ -1,5 +1,4 @@
 const TOKEN = "798103621:AAF0HFbMM5F1G0MUJHTahjQu42tU0VoUhdk";
-//const TOKEN = "930538856:AAFsNx17EQssgiQcs04XScnCFxlcd__2kmo";
 // Подключаем библиотеку для работы с Telegram API в переменную
 var TelegramBot = require("node-telegram-bot-api");
 // Включить опрос сервера. Бот должен обращаться к серверу Telegram, чтобы получать актуальную информацию
