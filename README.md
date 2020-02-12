@@ -3,7 +3,9 @@ Game Cities Telegram Bot
 
 
 most popular commands:
+
 create a new repository on the command line
+
 echo "# ManualTrade" >> README.md
 
 git init
