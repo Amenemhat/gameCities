@@ -1,0 +1,24 @@
+{
+  "name": "gamecities",
+  "version": "1.0.0",
+  "description": "Game Cities Telegram Bot",
+  "main": "index.js",
+  "dependencies": {
+    "dotenv": "^8.2.0",
+    "node-telegram-bot-api": "^0.40.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Amenemhat/gameCities.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Amenemhat/gameCities/issues"
+  },
+  "homepage": "https://github.com/Amenemhat/gameCities#readme"
+}
