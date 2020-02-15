@@ -1,3 +1,8 @@
+<<<<<<< HEAD
+=======
+//<script src="./config.js"></script>;
+console.log(test);
+>>>>>>> ce2ab09e66604cd3e0fc968b2e024b2f41bee31a
 const TOKEN = "798103621:AAF0HFbMM5F1G0MUJHTahjQu42tU0VoUhdk";
 // Подключаем библиотеку для работы с Telegram API в переменную
 var TelegramBot = require("node-telegram-bot-api");
