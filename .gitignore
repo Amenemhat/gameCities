@@ -1,3 +1,8 @@
+<<<<<<< HEAD
 config.js
 node_modules/
 new/
+=======
+node_modules/
+.env
+>>>>>>> e7bb4142f34defe5e7238d969a45db65538d2f03
