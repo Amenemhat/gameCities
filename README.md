@@ -21,6 +21,9 @@ git push origin --delete branch_name
 Создаем новую ветку
 git branch gameCitiesInDev
 
+git add .
+git commit -m "Disable city check"
+
 удалить ветку
 git branch -d gameCitiesInDev
 
@@ -29,6 +32,9 @@ git branch
 
 переключение между ветками
 git checkout gameCitiesInDev
+
+Отправляет выбранную ветку на гит
+git push origin HEAD
 
 // Подключаем библиотеку для работы с Telegram API в переменную
 let TelegramBot = require("node-telegram-bot-api");
