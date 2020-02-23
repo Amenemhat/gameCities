@@ -17,15 +17,10 @@ bot.on("message", msg => {
   const chatId = msg.chat.id;
 
   if (msg.text.toLowerCase() == "/start" && !gameStart) {
-    console.log("19 " + chatId + " : " + msg.text);
+    console.log("20 " + chatId + " : " + msg.text);
     let welcomeMessage =
       "Приветствую тебя в игре Города.\nДля начала новой игры напиши Начать";
     bot.sendMessage(chatId, welcomeMessage);
-  }
-
-  if ((msg.text.toLowerCase() == "начать" && !gameStart) || gameStart) {
-    console.log("26 " + msg.text + " spentCities = " + spentCities.size);
-    startGame(chatId, msg.text);
   }
 
   if (msg.text.toLowerCase() == "сдаюсь" && gameStart) {
@@ -36,6 +31,11 @@ bot.on("message", msg => {
     );
     bot.sendMessage(chatId, "Давай еще сыграем!");
     session(false);
+  }
+
+  if ((msg.text.toLowerCase() == "начать" && !gameStart) || gameStart) {
+    console.log("27 " + msg.text + " spentCities = " + spentCities.size);
+    startGame(chatId, msg.text);
   }
 });
 
@@ -85,7 +85,7 @@ function startGame(chatId, city) {
 
     let randCity = randomCity(cities); //проверить randomCity
     lastLetter = lastValidLetter(randCity);
-    console.log("91 " + randCity + " буква: " + lastLetter);
+    console.log("88 " + randCity + " буква: " + lastLetter);
 
     spentCities.add(randCity);
     console.log(spentCities);
@@ -101,6 +101,7 @@ function startGame(chatId, city) {
   ) {
     spentCities.add(city);
     let sCity = selectCityByLetter(lastValidLetter(city), cities);
+    //4. Если не осталось городов то писать «Я проиграл»
     if (sCity == -1 || sCity == undefined) {
       bot.sendMessage(
         chatId,
@@ -112,9 +113,9 @@ function startGame(chatId, city) {
       return;
     } else {
       spentCities.add(sCity);
-      console.log(sCity + " добавлен в СЕТ");
       console.log(spentCities);
       lastLetter = lastValidLetter(sCity);
+      //3. Ответить городом
       bot.sendMessage(chatId, firstSymbToUpperCase(sCity));
     }
   }
@@ -144,16 +145,18 @@ function selectCityByLetter(letter, cities) {
   let findCities = cities.filter(
     item => item[0] == letter && !spentCities.has(item)
   );
-  if (findCities == []) {
-    console.log("148 Город не найден");
+  //Условие ниже не срабатывает.. когда фильтр ничего не находит он должен вернуть пустой массив,
+  //но проверка на пустой массив почему-то не срабатывает
+  if (findCities == [] || findCities == undefined || findCities == NaN) {
+    console.log("149 Город не найден");
     return -1;
   } else return randomCity(findCities);
 }
-//сделать проверку первой буквы
+
 function chekCityInDB(chatId, city, lastLetter, cities) {
   if (cities.includes(city)) {
     let findCity = cities.find(item => item[0] == lastLetter && item == city);
-    //console.log("154 " + findCity + " - " + city + " буква " + lastLetter);
+
     if (findCity != city) {
       bot.sendMessage(
         chatId,
@@ -161,6 +164,7 @@ function chekCityInDB(chatId, city, lastLetter, cities) {
       );
       return false;
     }
+    //5. Если пользователь вводит город который уже вводил — ответить «нельзя повторять»
     if (spentCities.has(city)) {
       bot.sendMessage(chatId, "Этот город уже был назван!");
       return false;
@@ -191,13 +195,3 @@ function randomCity(arrCities) {
 function getRandomInt(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
-
-/*
-bot.on("message", msg => {
-  if (msg.text.toLowerCase().includes("кот")) {
-    chatId = msg.chat.id;
-    console.log(chatId + " : " + msg.text + " gameStart = "+ gameStart);
-    let photo = "tap.jpg";
-    bot.sendPhoto(chatId, photo, { caption: "Милые котята" });
-  }
-});*/
