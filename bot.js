@@ -34,7 +34,7 @@ bot.on("message", msg => {
   }
 
   if ((msg.text.toLowerCase() == "начать" && !gameStart) || gameStart) {
-    console.log("27 " + msg.text + " spentCities = " + spentCities.size);
+    console.log("37 " + msg.text + " spentCities = " + spentCities.size);
     startGame(chatId, msg.text);
   }
 });
@@ -148,11 +148,27 @@ function selectCityByLetter(letter, cities) {
   //Условие ниже не срабатывает.. когда фильтр ничего не находит он должен вернуть пустой массив,
   //но проверка на пустой массив почему-то не срабатывает
   if (findCities == [] || findCities == undefined || findCities == NaN) {
-    console.log("149 Город не найден");
+    console.log("151 Город не найден");
     return -1;
   } else return randomCity(findCities);
 }
 
+function chekCityInDB(chatId, city, lastLetter, cities) {
+  if (lastLetter != city[0]) {
+    bot.sendMessage(
+      chatId,
+      "Нужно назвать город на букву " + lastLetter.toUpperCase()
+    );
+    return false;
+  }
+  //5. Если пользователь вводит город который уже вводил — ответить «нельзя повторять»
+  if (spentCities.has(city)) {
+    bot.sendMessage(chatId, "Этот город уже был назван!");
+    return false;
+  }
+  return true;
+}
+/*
 function chekCityInDB(chatId, city, lastLetter, cities) {
   if (cities.includes(city)) {
     let findCity = cities.find(item => item[0] == lastLetter && item == city);
@@ -174,7 +190,7 @@ function chekCityInDB(chatId, city, lastLetter, cities) {
     bot.sendMessage(chatId, "Я не знаю такого города!");
     return false;
   }
-}
+}*/
 //  2. Проверить что сообщение - слово. И оно содержит более 3 символов и менее 30
 function validMessage(chatId, city) {
   if (city.length > 3 && city.length <= 30 && !city.includes(" ", ".", ",")) {

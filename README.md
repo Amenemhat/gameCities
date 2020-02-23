@@ -18,6 +18,18 @@ git clone https://github.com/Amenemhat/gameCities -b master --no-tags
 Для удаления внешних веток используйте
 git push origin --delete branch_name
 
+Создаем новую ветку
+git branch gameCitiesInDev
+
+удалить ветку
+git branch -d gameCitiesInDev
+
+получить список веток
+git branch
+
+переключение между ветками
+git checkout gameCitiesInDev
+
 // Подключаем библиотеку для работы с Telegram API в переменную
 let TelegramBot = require("node-telegram-bot-api");
 
