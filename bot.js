@@ -9,6 +9,7 @@ if (!process.env.TELEGRAM_TOKEN) {
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
 let gameStart = false;
 let spentCities = new Set();
+let lastLetter = "";
 
 bot.on("polling_error", m => console.log(m));
 
@@ -16,26 +17,22 @@ bot.on("message", msg => {
   const chatId = msg.chat.id;
 
   if (msg.text.toLowerCase() == "/start" && !gameStart) {
-    console.log(chatId + " : " + msg.text);
+    console.log("19 " + chatId + " : " + msg.text);
     let welcomeMessage =
       "Приветствую тебя в игре Города.\nДля начала новой игры напиши Начать";
     bot.sendMessage(chatId, welcomeMessage);
   }
 
   if ((msg.text.toLowerCase() == "начать" && !gameStart) || gameStart) {
-    console.log(
-      chatId + " : " + msg.text + " spentCities = " + spentCities.size
-    );
+    console.log("26 " + msg.text + " spentCities = " + spentCities.size);
     startGame(chatId, msg.text);
   }
 
   if (msg.text.toLowerCase() == "сдаюсь" && gameStart) {
-    console.log(
-      chatId + " : " + msg.text + " spentCities = " + spentCities.size
-    );
     bot.sendMessage(
       chatId,
-      "Я выиграл!!! \nГорода которые были названы:\n" + spentCities
+      "Я выиграл!!! \nГорода которые были названы:\n" +
+        [...spentCities].join(", ")
     );
     bot.sendMessage(chatId, "Давай еще сыграем!");
     session(false);
@@ -65,7 +62,7 @@ function startGame(chatId, city) {
     "Трускавец",
     "Уфа",
     "Флоренция",
-    "Хабаровск",
+    "Харьков",
     "Цюрих",
     "Челябинск",
     "Шанхай",
@@ -75,21 +72,25 @@ function startGame(chatId, city) {
     "Юрмала",
     "Ялта"
   ];
-  let lastLetter = "";
   cities = cities.map(item => item.toLowerCase());
   city = city.toLowerCase();
 
   //  1. Отправлен сообщение: Привет начинаем игру
   if (!gameStart) {
+    session(true);
     let startMessage =
       "Начинаем игру. \nЯ называю город, а ты должен в ответ назвать любой город \nначинающийся на последнюю букву моего города.\nГорода не должны повторятся.";
 
     bot.sendMessage(chatId, startMessage);
 
-    let randCity = randomCity(cities);
-    lastLetter = randCity[randCity.length - 1];
+    let randCity = randomCity(cities); //проверить randomCity
+    lastLetter = lastValidLetter(randCity);
+    console.log("91 " + randCity + " буква: " + lastLetter);
+
+    spentCities.add(randCity);
+    console.log(spentCities);
+
     bot.sendMessage(chatId, firstSymbToUpperCase(randCity));
-    session(true);
     return;
   }
 
@@ -98,29 +99,32 @@ function startGame(chatId, city) {
     validMessage(chatId, city) &&
     chekCityInDB(chatId, city, lastLetter, cities)
   ) {
+    spentCities.add(city);
     let sCity = selectCityByLetter(lastValidLetter(city), cities);
-    if (sCity == -1) {
+    if (sCity == -1 || sCity == undefined) {
       bot.sendMessage(
         chatId,
         "Игра окончена, я проиграл! \nГорода которые были названы:\n" +
-          spentCities
+          [...spentCities].join(", ")
       );
-      bot.sendMessage(chatId, "Давай еще сыграем!");
+      bot.sendMessage(chatId, "Давай сыграем еще!");
       session(false);
       return;
     } else {
       spentCities.add(sCity);
+      console.log(sCity + " добавлен в СЕТ");
+      console.log(spentCities);
+      lastLetter = lastValidLetter(sCity);
       bot.sendMessage(chatId, firstSymbToUpperCase(sCity));
     }
   }
 }
 
-function session(startStop) {
-  if (startStop) {
+function session(start) {
+  if (start) {
     gameStart = true;
-    spentCities.clear();
   }
-  if (!startStop) {
+  if (!start) {
     gameStart = false;
     spentCities.clear();
   }
@@ -141,15 +145,15 @@ function selectCityByLetter(letter, cities) {
     item => item[0] == letter && !spentCities.has(item)
   );
   if (findCities == []) {
+    console.log("148 Город не найден");
     return -1;
   } else return randomCity(findCities);
 }
 //сделать проверку первой буквы
 function chekCityInDB(chatId, city, lastLetter, cities) {
   if (cities.includes(city)) {
-    let findCity = cities.find(
-      item => item[item.length - 1] == lastLetter && item == city
-    );
+    let findCity = cities.find(item => item[0] == lastLetter && item == city);
+    //console.log("154 " + findCity + " - " + city + " буква " + lastLetter);
     if (findCity != city) {
       bot.sendMessage(
         chatId,
@@ -181,11 +185,7 @@ function validMessage(chatId, city) {
 }
 
 function randomCity(arrCities) {
-  //console.log(arrCities);
-  let city = arrCities[getRandomInt(arrCities.length)];
-  spentCities.add(city);
-  //console.log(spentCities);
-  return city;
+  return arrCities[getRandomInt(arrCities.length)];
 }
 
 function getRandomInt(max) {
