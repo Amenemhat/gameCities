@@ -36,6 +36,9 @@ git checkout gameCitiesInDev
 Отправляет выбранную ветку на гит
 git push origin HEAD
 
+Download all from selected branch
+git pull origin gameCitiesInDev
+
 // Подключаем библиотеку для работы с Telegram API в переменную
 let TelegramBot = require("node-telegram-bot-api");
 
