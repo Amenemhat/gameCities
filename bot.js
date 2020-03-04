@@ -8,84 +8,66 @@ if (!process.env.TELEGRAM_TOKEN) {
 }
 
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
-
-let session = [];
 let usedKeyWords = ["/start", "начать", "сдаюсь"];
 
 bot.on("polling_error", m => console.log(m));
 
 bot.onText(/\/start/i, msg => {
-  let index = session.findIndex(
-    sessionItem => sessionItem.chatId === msg.chat.id
-  );
-  if (index == -1) {
+  const chatID = msg.chat.id;
+
+  if (!(chatID in game.sessions)) {
     let welcomeMessage =
       "Приветствую тебя в игре Города.\nДля начала новой игры напиши Начать";
-    bot.sendMessage(msg.chat.id, welcomeMessage);
+    bot.sendMessage(chatID, welcomeMessage);
   }
 });
 
 bot.onText(/начать/i, msg => {
-  let index = session.findIndex(
-    sessionItem => sessionItem.chatId === msg.chat.id
-  );
+  const chatID = msg.chat.id;
 
-  if (session.length == 0 || index == -1) {
-    session[session.length] = new game.session(session.length, msg.chat.id);
-    index = session.length - 1;
+  if (!(chatID in game.sessions)) {
+    game.sessions.makeSession(chatID);
 
-    let start = game.start(index);
-    start.message.map(messageItem =>
-      bot.sendMessage(session[index].chatId, messageItem)
-    );
+    let start = game.start(chatID);
+    start.messages.map(messageItem => bot.sendMessage(chatID, messageItem));
   }
 });
 
 bot.onText(/сдаюсь/i, msg => {
-  let index = session.findIndex(
-    sessionItem => sessionItem.chatId === msg.chat.id
-  );
+  const chatID = msg.chat.id;
 
-  if (index >= 0) {
+  if (chatID in game.sessions) {
     bot.sendMessage(
-      session[index].chatId,
+      chatID,
       "Я выиграл!!! \nГорода которые были названы:\n" +
-        [...session[index].spentCities].join(", ")
+        [...game.sessions[chatID].spentCities].join(", ")
     );
-    bot.sendMessage(session[index].chatId, "Давай еще сыграем!");
-    console.log("bot.js 56 session: ");
-    console.log(session);
-    session.splice(index, 1);
+    setTimeout(
+      bot.sendMessage(chatID, "Давай еще сыграем! \nДля начала напиши Начать."),
+      1000
+    );
+    console.log(game.sessions);
+    game.sessions.deleteSession(chatID);
   }
 });
 
 bot.on("message", msg => {
+  const chatID = msg.chat.id;
   if (usedKeyWords.includes(msg.text.toLowerCase())) return;
 
-  let index = session.findIndex(
-    sessionItem => sessionItem.chatId === msg.chat.id
-  );
-  if (index >= 0 && msg.chat.id == session[index].chatId) {
-    console.log("69 " + session[index].chatId + " : " + msg.text);
+  if (chatID in game.sessions) {
+    let main = game.main(chatID, msg.text.toLowerCase());
 
-    let main = game.main(index, msg.text.toLowerCase());
-    if (!main.isError && !main.stopGame) {
-      main.message.map(messageItem =>
-        bot.sendMessage(session[index].chatId, messageItem)
-      );
+    if (main.errorMsg === "" && !main.stopGame) {
+      main.messages.map(messageItem => bot.sendMessage(chatID, messageItem));
     }
-    if (!main.isError && main.stopGame) {
-      main.message.map(messageItem =>
-        bot.sendMessage(session[index].chatId, messageItem)
-      );
-      console.log("bot.js 81 session: ");
-      console.log(session);
-      session.splice(index, 1);
+    if (main.errorMsg === "" && main.stopGame) {
+      main.messages.map(messageItem => bot.sendMessage(chatID, messageItem));
+      console.log(game.sessions);
+      game.sessions.deleteSession(chatID);
     }
-    if (main.isError) {
-      bot.sendMessage(session[index].chatId, main.errorMsg);
+    if (main.errorMsg != "") {
+      bot.sendMessage(chatID, main.errorMsg);
     }
   }
 });
-
-module.exports.session = session;

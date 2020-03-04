@@ -1,4 +1,3 @@
-let bot = require("./bot.js");
 let helpers = require("./helpers.js");
 let lastLetter = "";
 let cities = [
@@ -34,115 +33,106 @@ let cities = [
   "Ялта"
 ].map(item => item.toLowerCase());
 
-exports.session = class Session {
-  constructor(id, chatId = 0) {
-    this.id = id;
-    this.chatId = chatId;
-    this.spentCities = new Set();
+let sessions = {
+  makeSession(chatID) {
+    this[chatID] = { spentCities: new Set() };
+  },
+  deleteSession(chatID) {
+    delete this[chatID];
   }
 };
 
 function randomCity(arrCities) {
-  return arrCities[helpers.getRandomInt(arrCities.length)];
+  return arrCities[helpers.getRandomNumber(arrCities.length)];
 }
 
 function lastValidLetter(str) {
   let lastLetter = str[str.length - 1];
-  let invalidLetters = ["ь", "Ъ"];
+  let invalidLetters = ["ь", "ъ"];
   let i = 2;
 
-  while (invalidLetters.includes(lastLetter) || str.length == i) {
+  while (invalidLetters.includes(lastLetter)) {
     lastLetter = str[str.length - i];
     i++;
   }
   return lastLetter;
 }
 
-function checkCityInDB(sessionId, city, letter) {
-  let result = { isError: false, errorMsg: "" };
-
-  if (letter != city[0]) {
-    result.errorMsg = "Нужно назвать город на букву " + letter.toUpperCase();
-    result.isError = true;
-    return result;
+function validateMessage(message) {
+  let invalidSymbols = [" ", ".", ","];
+  if (
+    message.length <= 3 ||
+    message.length > 30 ||
+    invalidSymbols.findIndex(item => message.includes(item)) > -1
+  ) {
+    return "Название города должно содержать одно слово, \nбез пробелов и знаков препинания, \nот 3 до 30 символов.";
   }
-  if (bot.session[sessionId].spentCities.has(city)) {
-    result.errorMsg = "Этот город уже был назван!";
-    result.isError = true;
-  }
-  return result;
+  return null;
 }
 
-function selectCityByLetter(sessionId, letter, cities) {
-  let findCities = [];
-  findCities = cities.filter(
-    item => item[0] == letter && !bot.session[sessionId].spentCities.has(item)
+function checkCityInDB(chatID, city, letter) {
+  if (letter != city[0]) {
+    return "Нужно назвать город на букву " + letter.toUpperCase();
+  }
+  if (sessions[chatID].spentCities.has(city)) {
+    return "Этот город уже был назван!";
+  }
+  return null;
+}
+
+function selectCityByLetter(chatID, letter, cities) {
+  let findCities = cities.filter(
+    item => item[0] == letter && !sessions[chatID].spentCities.has(item)
   );
-  //Условие ниже не срабатывает.. когда фильтр ничего не находит он должен вернуть пустой массив,
-  //но проверка на пустой массив почему-то не срабатывает
-  if (findCities == [] || findCities == undefined || findCities == NaN) {
-    console.log("game.js 84 Город не найден");
-    return -1;
+  if (findCities.length === 0) {
+    return null;
   } else return randomCity(findCities);
 }
 
-exports.start = function(sessionId) {
-  let result = { message: [] };
-  result.message.push(
+function start(chatID) {
+  let result = { messages: [] };
+  result.messages.push(
     "Начинаем игру. \nЯ называю город, а ты должен в ответ назвать любой город \nначинающийся на последнюю букву моего города.\nГорода не должны повторятся."
   );
-  console.log(bot.session);
 
   let selectedCity = randomCity(cities);
-  bot.session[sessionId].spentCities.add(selectedCity);
+  sessions[chatID].spentCities.add(selectedCity);
   lastLetter = lastValidLetter(selectedCity);
-  console.log("game.js 99 " + selectedCity + " буква: " + lastLetter);
-
-  result.message.push(helpers.firstSymbolToUpperCase(selectedCity));
+  result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
   return result;
-};
+}
 
-exports.main = function(sessionId, city) {
-  let result = { isError: false, stopGame: false, message: [], errorMsg: "" };
+function main(chatID, city) {
+  let result = { stopGame: false, messages: [], errorMsg: "" };
 
-  let validMessageObj = helpers.validMessage(city);
-  if (validMessageObj.isError) {
-    result.isError = true;
-    result.errorMsg = validMessageObj.errorMsg;
-    console.log("game.js 112 " + result.errorMsg);
+  let validateMessageResult = validateMessage(city);
+  if (validateMessageResult != null) {
+    result.errorMsg = validateMessageResult;
     return result;
   }
 
-  let checkCityInDBObj = checkCityInDB(sessionId, city, lastLetter);
-  if (checkCityInDBObj.isError) {
-    result.isError = true;
-    result.errorMsg = checkCityInDBObj.errorMsg;
-    console.log("game.js 120 " + result.errorMsg);
+  let checkCityInDBResult = checkCityInDB(chatID, city, lastLetter);
+  if (checkCityInDBResult != null) {
+    result.errorMsg = checkCityInDBResult;
     return result;
   }
 
-  bot.session[sessionId].spentCities.add(city);
-  console.log("game.js 125");
-  console.log(bot.session[sessionId].spentCities);
-  let selectedCity = selectCityByLetter(
-    sessionId,
-    lastValidLetter(city),
-    cities
-  );
-  if (selectedCity == -1 || selectedCity == undefined) {
-    result.message.push(
+  sessions[chatID].spentCities.add(city);
+  let selectedCity = selectCityByLetter(chatID, lastValidLetter(city), cities);
+  if (selectedCity === null || selectedCity === undefined) {
+    result.messages.push(
       "Игра окончена, я проиграл! \nГорода которые были названы:\n" +
-        [...bot.session[sessionId].spentCities].join(", ")
+        [...sessions[chatID].spentCities].join(", ")
     );
-    result.message.push("Давай сыграем еще!");
+    result.messages.push("Давай сыграем еще! \nДля начала напиши Начать.");
     result.stopGame = true;
     return result;
   } else {
-    bot.session[sessionId].spentCities.add(selectedCity);
-    console.log("game.js 142");
-    console.log(bot.session[sessionId].spentCities);
+    sessions[chatID].spentCities.add(selectedCity);
     lastLetter = lastValidLetter(selectedCity);
-    result.message.push(helpers.firstSymbolToUpperCase(selectedCity));
+    result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
     return result;
   }
-};
+}
+
+module.exports = { sessions, start, main };
