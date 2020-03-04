@@ -8,11 +8,16 @@ if (!process.env.TELEGRAM_TOKEN) {
 }
 
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
-let usedKeyWords = ["/start", "начать", "сдаюсь"];
+const usedKeyWords = ["/start", "начать", "сдаюсь"];
+const commands = {
+  START: /\/start/i,
+  START_GAME: /начать/i,
+  STOP_GAME: /сдаюсь/i
+};
 
 bot.on("polling_error", m => console.log(m));
 
-bot.onText(/\/start/i, msg => {
+bot.onText(commands.START, msg => {
   const chatID = msg.chat.id;
 
   if (!(chatID in game.sessions)) {
@@ -22,7 +27,7 @@ bot.onText(/\/start/i, msg => {
   }
 });
 
-bot.onText(/начать/i, msg => {
+bot.onText(commands.START_GAME, msg => {
   const chatID = msg.chat.id;
 
   if (!(chatID in game.sessions)) {
@@ -33,7 +38,7 @@ bot.onText(/начать/i, msg => {
   }
 });
 
-bot.onText(/сдаюсь/i, msg => {
+bot.onText(commands.STOP_GAME, msg => {
   const chatID = msg.chat.id;
 
   if (chatID in game.sessions) {
@@ -42,10 +47,7 @@ bot.onText(/сдаюсь/i, msg => {
       "Я выиграл!!! \nГорода которые были названы:\n" +
         [...game.sessions[chatID].spentCities].join(", ")
     );
-    setTimeout(
-      bot.sendMessage(chatID, "Давай еще сыграем! \nДля начала напиши Начать."),
-      1000
-    );
+    bot.sendMessage(chatID, "Давай еще сыграем! \nДля начала напиши Начать.");
     console.log(game.sessions);
     game.sessions.deleteSession(chatID);
   }
