@@ -6,4 +6,8 @@ function getRandomNumber(max) {
   return Math.floor(Math.random() * Math.floor(max));
 }
 
-module.exports = { firstSymbolToUpperCase, getRandomNumber };
+function sendBulkMessages(bot, chatID, messages) {
+  return messages.forEach(messageItem => bot.sendMessage(chatID, messageItem));
+}
+
+module.exports = { firstSymbolToUpperCase, getRandomNumber, sendBulkMessages };

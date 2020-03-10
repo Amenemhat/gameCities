@@ -33,14 +33,15 @@ let cities = [
   "Ялта"
 ].map(item => item.toLowerCase());
 
-let sessions = {
-  makeSession(chatID) {
-    this[chatID] = { spentCities: new Set() };
-  },
-  deleteSession(chatID) {
-    delete this[chatID];
-  }
-};
+let sessions = {};
+
+function makeSession(chatID) {
+  sessions[chatID] = { spentCities: new Set() };
+}
+
+function deleteSession(chatID) {
+  delete sessions[chatID];
+}
 
 function randomCity(arrCities) {
   return arrCities[helpers.getRandomNumber(arrCities.length)];
@@ -86,7 +87,9 @@ function selectCityByLetter(chatID, letter, cities) {
   );
   if (findCities.length === 0) {
     return null;
-  } else return randomCity(findCities);
+  } else {
+    return randomCity(findCities);
+  }
 }
 
 function start(chatID) {
@@ -102,8 +105,8 @@ function start(chatID) {
   return result;
 }
 
-function main(chatID, city) {
-  let result = { stopGame: false, messages: [], errorMsg: "" };
+function processEnteredCity(chatID, city) {
+  let result = { messages: [], errorMsg: "" };
 
   let validateMessageResult = validateMessage(city);
   if (validateMessageResult != null) {
@@ -125,7 +128,6 @@ function main(chatID, city) {
         [...sessions[chatID].spentCities].join(", ")
     );
     result.messages.push("Давай сыграем еще! \nДля начала напиши Начать.");
-    result.stopGame = true;
     return result;
   } else {
     sessions[chatID].spentCities.add(selectedCity);
@@ -135,4 +137,10 @@ function main(chatID, city) {
   }
 }
 
-module.exports = { sessions, start, main };
+module.exports = {
+  sessions,
+  makeSession,
+  deleteSession,
+  start,
+  processEnteredCity
+};
