@@ -9,6 +9,7 @@ if (!process.env.TELEGRAM_TOKEN) {
 }
 
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
+
 const commands = {
   START: /\/start/i,
   START_GAME: /начать/i,
