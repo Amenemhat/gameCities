@@ -1,52 +1,36 @@
 require("dotenv").config();
 const Client = require("@googlemaps/google-maps-services-js").Client;
 const client = new Client({});
-let findCities = [];
+let findCity = [];
 
 if (!process.env.GOOGLE_MAPS_API_KEY) {
   throw new Error("GOOGLE_MAPS_API_KEY env variable is missing");
 }
 
-client
-  .findPlaceFromText({
-    params: {
-      key: process.env.GOOGLE_MAPS_API_KEY,
-      input: "города Украины",
-      inputtype: "textquery"
-      //language: "ru"
-    },
-    timeout: 1000
-  })
-  .then(response => {
-    //console.log("=====1=====");
-    parseResults(response.data.candidates);
-  })
-  .catch(e => {
-    console.log(e);
-  });
-
-function parseResults(findResults) {
-  findResults.forEach(respItem => {
-    client
-      .placeDetails({
-        params: {
-          key: process.env.GOOGLE_MAPS_API_KEY,
-          place_id: respItem.place_id,
-          language: "ru"
-        },
-        timeout: 1000
-      })
-      .then(resp => {
-        if (resp.data.result.name) {
-          findCities.push(resp.data.result.name);
-          console.log(resp.data.result.name);
-        }
-
-        //console.log(resp.data || "");
-      })
-      .catch(e => {
-        console.log("");
-      });
-  });
+function parseResults(city) {
+  city.forEach(item => findCity.push(item.name));
+  console.log(findCity.length);
+  console.log(findCity);
 }
-//console.log(findCities);
+
+function findCities(query) {
+  client
+    .findPlaceFromText({
+      params: {
+        key: process.env.GOOGLE_MAPS_API_KEY,
+        input: query,
+        inputtype: "textquery",
+        fields: ["name"],
+        language: "ru"
+      },
+      timeout: 2000
+    })
+    .then(response => {
+      parseResults(response.data.candidates);
+    })
+    .catch(e => {
+      console.log(e);
+    });
+}
+
+findCities("города сша");
