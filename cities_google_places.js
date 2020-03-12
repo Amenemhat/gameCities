@@ -34,3 +34,4 @@ function findCities(query) {
 }
 
 findCities("города сша");
+module.exports = { findCities };
