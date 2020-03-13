@@ -1,4 +1,5 @@
 let helpers = require("./helpers.js");
+let places_api = require("./places_api.js");
 let lastLetter = "";
 let cities = [
   "Архангельск",
@@ -59,8 +60,15 @@ function lastValidLetter(str) {
   return lastLetter;
 }
 
+function checkCityInGoogle(query) {
+  places_api.findCities(query);
+  //return places_api.findCity;
+}
+
 function validateMessage(message) {
-  let invalidSymbols = [" ", ".", ","];
+  let invalidSymbols = ["!", ","];
+  checkCityInGoogle('город "' + message + '"');
+  console.log(message + ": " + places_api.findCity[0]);
   if (
     message.length <= 3 ||
     message.length > 30 ||

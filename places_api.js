@@ -10,10 +10,11 @@ if (!process.env.GOOGLE_MAPS_API_KEY) {
 function parseResults(city) {
   city.forEach(item => findCity.push(item.name));
   console.log(findCity.length);
-  console.log(findCity);
+  //console.log(findCity);
 }
 
 function findCities(query) {
+  findCity.length = 0;
   client
     .findPlaceFromText({
       params: {
@@ -33,5 +34,4 @@ function findCities(query) {
     });
 }
 
-findCities("города сша");
-module.exports = { findCities };
+module.exports = { findCities, findCity };
