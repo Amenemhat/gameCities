@@ -24,7 +24,7 @@ function findCities(query) {
         fields: ["name"],
         language: "ru"
       },
-      timeout: 2000
+      timeout: 1000
     })
     .then(response => {
       parseResults(response.data.candidates);

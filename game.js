@@ -60,15 +60,27 @@ function lastValidLetter(str) {
   return lastLetter;
 }
 
-function checkCityInGoogle(query) {
-  places_api.findCities(query);
-  //return places_api.findCity;
+async function checkCityInGoogle(message) {
+  let promise = new Promise(resolve => {
+    places_api.findCities("город " + message);
+    if (places_api.findCity.length > 0) resolve("Ответ: ");
+  }).then(
+    resolve => console.log(resolve),
+    error => console.log(error)
+  );
+
+  console.log((await promise) + places_api.findCity.join(", "));
 }
 
 function validateMessage(message) {
   let invalidSymbols = ["!", ","];
-  checkCityInGoogle('город "' + message + '"');
-  console.log(message + ": " + places_api.findCity[0]);
+  console.log("Запрос: город " + message);
+  //checkCityInGoogle(message);
+  places_api.findCities("город " + message);
+  setTimeout(
+    () => console.log("Ответ: " + places_api.findCity.join(", ")),
+    1500
+  );
   if (
     message.length <= 3 ||
     message.length > 30 ||
