@@ -2,6 +2,7 @@ require("dotenv").config();
 
 let TelegramBot = require("node-telegram-bot-api");
 let game = require("./game.js");
+let places_api = require("./places_api.js");
 let helpers = require("./helpers.js");
 
 if (!process.env.TELEGRAM_TOKEN) {
@@ -59,26 +60,37 @@ bot.on("message", msg => {
   }
 
   if (chatID in game.sessions) {
-    let processEnteredCity = game.processEnteredCity(
-      chatID,
-      msg.text.toLowerCase()
+    let checkCityInGoogle = new Promise(function(resolve) {
+      places_api.findCities(msg.text);
+      setTimeout(() => resolve(places_api.foundCity), 1200);
+    });
+    checkCityInGoogle.then(foundCity =>
+      processMessages(chatID, msg.text, foundCity)
     );
-
-    if (
-      processEnteredCity.errorMsg === "" &&
-      processEnteredCity.messages.length === 1
-    ) {
-      helpers.sendBulkMessages(bot, chatID, processEnteredCity.messages);
-    }
-    if (
-      processEnteredCity.errorMsg === "" &&
-      processEnteredCity.messages.length > 1
-    ) {
-      helpers.sendBulkMessages(bot, chatID, processEnteredCity.messages);
-      game.deleteSession(chatID);
-    }
-    if (processEnteredCity.errorMsg != "") {
-      bot.sendMessage(chatID, processEnteredCity.errorMsg);
-    }
   }
 });
+
+function processMessages(chatID, msg, foundCity) {
+  let processEnteredCity = game.processEnteredCity(
+    chatID,
+    msg.toLowerCase(),
+    foundCity
+  );
+
+  if (
+    processEnteredCity.errorMsg === "" &&
+    processEnteredCity.messages.length === 1
+  ) {
+    helpers.sendBulkMessages(bot, chatID, processEnteredCity.messages);
+  }
+  if (
+    processEnteredCity.errorMsg === "" &&
+    processEnteredCity.messages.length > 1
+  ) {
+    helpers.sendBulkMessages(bot, chatID, processEnteredCity.messages);
+    game.deleteSession(chatID);
+  }
+  if (processEnteredCity.errorMsg != "") {
+    bot.sendMessage(chatID, processEnteredCity.errorMsg);
+  }
+}

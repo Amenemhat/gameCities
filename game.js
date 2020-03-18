@@ -1,5 +1,4 @@
 let helpers = require("./helpers.js");
-let places_api = require("./places_api.js");
 let lastLetter = "";
 let cities = [
   "Архангельск",
@@ -60,33 +59,11 @@ function lastValidLetter(str) {
   return lastLetter;
 }
 
-async function checkCityInGoogle(message) {
-  let promise = new Promise(resolve => {
-    places_api.findCities("город " + message);
-    if (places_api.findCity.length > 0) resolve("Ответ: ");
-  }).then(
-    resolve => console.log(resolve),
-    error => console.log(error)
-  );
-
-  console.log((await promise) + places_api.findCity.join(", "));
-}
-
-function validateMessage(message) {
-  let invalidSymbols = ["!", ","];
-  console.log("Запрос: город " + message);
-  //checkCityInGoogle(message);
-  places_api.findCities("город " + message);
-  setTimeout(
-    () => console.log("Ответ: " + places_api.findCity.join(", ")),
-    1500
-  );
-  if (
-    message.length <= 3 ||
-    message.length > 30 ||
-    invalidSymbols.findIndex(item => message.includes(item)) > -1
-  ) {
-    return "Название города должно содержать одно слово, \nбез пробелов и знаков препинания, \nот 3 до 30 символов.";
+function checkCityInGoogle(city, foundCity) {
+  console.log("Запрос: город " + city);
+  console.log("Ответ: " + foundCity);
+  if (city != foundCity[0]) {
+    return "Я такого города не знаю!";
   }
   return null;
 }
@@ -125,12 +102,12 @@ function start(chatID) {
   return result;
 }
 
-function processEnteredCity(chatID, city) {
+function processEnteredCity(chatID, city, foundCities) {
   let result = { messages: [], errorMsg: "" };
 
-  let validateMessageResult = validateMessage(city);
-  if (validateMessageResult != null) {
-    result.errorMsg = validateMessageResult;
+  let checkCityInGoogleResult = checkCityInGoogle(city, foundCities);
+  if (checkCityInGoogleResult != null) {
+    result.errorMsg = checkCityInGoogleResult;
     return result;
   }
 

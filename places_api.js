@@ -1,20 +1,14 @@
 require("dotenv").config();
 const Client = require("@googlemaps/google-maps-services-js").Client;
 const client = new Client({});
-let findCity = [];
+let foundCity = [];
 
 if (!process.env.GOOGLE_MAPS_API_KEY) {
   throw new Error("GOOGLE_MAPS_API_KEY env variable is missing");
 }
 
-function parseResults(city) {
-  city.forEach(item => findCity.push(item.name));
-  console.log(findCity.length);
-  //console.log(findCity);
-}
-
 function findCities(query) {
-  findCity.length = 0;
+  foundCity.length = 0;
   client
     .findPlaceFromText({
       params: {
@@ -27,11 +21,15 @@ function findCities(query) {
       timeout: 1000
     })
     .then(response => {
-      parseResults(response.data.candidates);
+      response.data.candidates.forEach(item =>
+        foundCity.push(item.name.toLowerCase())
+      );
+      console.log(foundCity.length);
+      console.log(foundCity);
     })
     .catch(e => {
       console.log(e);
     });
 }
 
-module.exports = { findCities, findCity };
+module.exports = { findCities, foundCity };
