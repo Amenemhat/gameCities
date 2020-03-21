@@ -62,7 +62,7 @@ function lastValidLetter(str) {
 function checkCityInGoogle(city, foundCity) {
   console.log("Запрос: город " + city);
   console.log("Ответ: " + foundCity);
-  if (city != foundCity[0]) {
+  if (city != foundCity) {
     return "Я такого города не знаю!";
   }
   return null;
@@ -102,10 +102,10 @@ function start(chatID) {
   return result;
 }
 
-function processEnteredCity(chatID, city, foundCities) {
+function processEnteredCity(chatID, city, foundCity) {
   let result = { messages: [], errorMsg: "" };
 
-  let checkCityInGoogleResult = checkCityInGoogle(city, foundCities);
+  let checkCityInGoogleResult = checkCityInGoogle(city, foundCity);
   if (checkCityInGoogleResult != null) {
     result.errorMsg = checkCityInGoogleResult;
     return result;

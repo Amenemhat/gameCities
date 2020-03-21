@@ -60,22 +60,22 @@ bot.on("message", msg => {
   }
 
   if (chatID in game.sessions) {
-    let checkCityInGoogle = new Promise(function(resolve) {
-      places_api.findCities(msg.text);
-      setTimeout(() => resolve(places_api.foundCity), 1200);
-    });
-    checkCityInGoogle.then(foundCity =>
-      processMessages(chatID, msg.text, foundCity)
+    places_api
+      .findCities(msg.text)
+      .then(foundCity =>
+        processMessages(chatID, msg.text.toLowerCase(), foundCity.toLowerCase())
+      );
+  } else {
+    bot.sendMessage(
+      chatID,
+      "Список доступных команд:\n/start\nНачать\nСдаюсь\nДля начала игры напиши Начать"
     );
   }
 });
 
 function processMessages(chatID, msg, foundCity) {
-  let processEnteredCity = game.processEnteredCity(
-    chatID,
-    msg.toLowerCase(),
-    foundCity
-  );
+  console.log(foundCity);
+  let processEnteredCity = game.processEnteredCity(chatID, msg, foundCity);
 
   if (
     processEnteredCity.errorMsg === "" &&
@@ -92,5 +92,8 @@ function processMessages(chatID, msg, foundCity) {
   }
   if (processEnteredCity.errorMsg != "") {
     bot.sendMessage(chatID, processEnteredCity.errorMsg);
+  }
+  if (foundCity === "over_query_limit") {
+    bot.sendMessage(chatID, "Введите другой город!");
   }
 }
