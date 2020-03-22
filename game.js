@@ -1,38 +1,7 @@
+let places_api = require("./places_api.js");
 let helpers = require("./helpers.js");
+let alphabet = "абвгдежзийклмнопрстуфхцшщыэюя";
 let lastLetter = "";
-let cities = [
-  "Архангельск",
-  "Борисполь",
-  "Воронеж",
-  "Гюмри",
-  "Донецк",
-  "Енакиево",
-  "Жуковский",
-  "Запорожье",
-  "Изюм",
-  "Йошкар-Ола",
-  "Киев",
-  "Лондон",
-  "Москва",
-  "Николаев",
-  "Орёл",
-  "Париж",
-  "Ростов",
-  "Селидово",
-  "Трускавец",
-  "Уфа",
-  "Флоренция",
-  "Харьков",
-  "Цюрих",
-  "Челябинск",
-  "Шанхай",
-  "Щёлково",
-  "Ыгдыр",
-  "Электросталь",
-  "Юрмала",
-  "Ялта"
-].map(item => item.toLowerCase());
-
 let sessions = {};
 
 function makeSession(chatID) {
@@ -59,10 +28,15 @@ function lastValidLetter(str) {
   return lastLetter;
 }
 
-function checkCityInGoogle(city, foundCity) {
+async function checkCityInGoogle(city) {
   console.log("Запрос: город " + city);
+  let foundCity = await places_api.findCities(city);
   console.log("Ответ: " + foundCity);
-  if (city != foundCity) {
+
+  if (foundCity === "over_query_limit") {
+    return "Введите другой город!";
+  }
+  if (city != foundCity || foundCity === "zero_results") {
     return "Я такого города не знаю!";
   }
   return null;
@@ -78,34 +52,39 @@ function checkCityInDB(chatID, city, letter) {
   return null;
 }
 
-function selectCityByLetter(chatID, letter, cities) {
-  let findCities = cities.filter(
+async function selectCityByLetter(chatID, letter) {
+  console.log("Ищем город на букву " + letter);
+  let findCities = await places_api.findCitiesByLetter("город " + letter);
+  let result = findCities.filter(
     item => item[0] == letter && !sessions[chatID].spentCities.has(item)
   );
-  if (findCities.length === 0) {
+  console.log(findCities);
+  if (result.length === 0) {
     return null;
   } else {
-    return randomCity(findCities);
+    return randomCity(result);
   }
 }
 
-function start(chatID) {
+async function start(chatID) {
   let result = { messages: [] };
   result.messages.push(
     "Начинаем игру. \nЯ называю город, а ты должен в ответ назвать любой город \nначинающийся на последнюю букву моего города.\nГорода не должны повторятся."
   );
+  let selectedCity = await selectCityByLetter(chatID, randomCity(alphabet));
 
-  let selectedCity = randomCity(cities);
-  sessions[chatID].spentCities.add(selectedCity);
-  lastLetter = lastValidLetter(selectedCity);
-  result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
-  return result;
+  if (selectedCity != null || selectedCity != undefined) {
+    sessions[chatID].spentCities.add(selectedCity);
+    lastLetter = lastValidLetter(selectedCity);
+    result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
+    return result;
+  } else return null;
 }
 
-function processEnteredCity(chatID, city, foundCity) {
+async function processEnteredCity(chatID, city) {
   let result = { messages: [], errorMsg: "" };
 
-  let checkCityInGoogleResult = checkCityInGoogle(city, foundCity);
+  let checkCityInGoogleResult = await checkCityInGoogle(city);
   if (checkCityInGoogleResult != null) {
     result.errorMsg = checkCityInGoogleResult;
     return result;
@@ -118,7 +97,7 @@ function processEnteredCity(chatID, city, foundCity) {
   }
 
   sessions[chatID].spentCities.add(city);
-  let selectedCity = selectCityByLetter(chatID, lastValidLetter(city), cities);
+  let selectedCity = await selectCityByLetter(chatID, lastValidLetter(city));
   if (selectedCity === null || selectedCity === undefined) {
     result.messages.push(
       "Игра окончена, я проиграл! \nГорода которые были названы:\n" +

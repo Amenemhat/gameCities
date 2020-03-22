@@ -2,7 +2,6 @@ require("dotenv").config();
 
 let TelegramBot = require("node-telegram-bot-api");
 let game = require("./game.js");
-let places_api = require("./places_api.js");
 let helpers = require("./helpers.js");
 
 if (!process.env.TELEGRAM_TOKEN) {
@@ -34,8 +33,7 @@ bot.onText(commands.START_GAME, msg => {
 
   if (!(chatID in game.sessions)) {
     game.makeSession(chatID);
-
-    helpers.sendBulkMessages(bot, chatID, game.start(chatID).messages);
+    startGame(chatID);
   }
 });
 
@@ -60,11 +58,7 @@ bot.on("message", msg => {
   }
 
   if (chatID in game.sessions) {
-    places_api
-      .findCities(msg.text)
-      .then(foundCity =>
-        processMessages(chatID, msg.text.toLowerCase(), foundCity.toLowerCase())
-      );
+    processMessages(chatID, msg.text.toLowerCase());
   } else {
     bot.sendMessage(
       chatID,
@@ -73,9 +67,14 @@ bot.on("message", msg => {
   }
 });
 
-function processMessages(chatID, msg, foundCity) {
-  console.log(foundCity);
-  let processEnteredCity = game.processEnteredCity(chatID, msg, foundCity);
+async function startGame(chatID) {
+  let gStart = await game.start(chatID);
+  if (gStart != null || gStart != undefined)
+    helpers.sendBulkMessages(bot, chatID, gStart.messages);
+}
+
+async function processMessages(chatID, msg) {
+  let processEnteredCity = await game.processEnteredCity(chatID, msg);
 
   if (
     processEnteredCity.errorMsg === "" &&
@@ -92,8 +91,5 @@ function processMessages(chatID, msg, foundCity) {
   }
   if (processEnteredCity.errorMsg != "") {
     bot.sendMessage(chatID, processEnteredCity.errorMsg);
-  }
-  if (foundCity === "over_query_limit") {
-    bot.sendMessage(chatID, "Введите другой город!");
   }
 }

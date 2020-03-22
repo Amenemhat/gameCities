@@ -7,7 +7,9 @@ function getRandomNumber(max) {
 }
 
 function sendBulkMessages(bot, chatID, messages) {
-  return messages.forEach(messageItem => bot.sendMessage(chatID, messageItem));
+  if (messages != undefined)
+    messages.forEach(messageItem => bot.sendMessage(chatID, messageItem));
+  else console.log("Error sendBulkMessages, messages === undefined");
 }
 
 module.exports = { firstSymbolToUpperCase, getRandomNumber, sendBulkMessages };

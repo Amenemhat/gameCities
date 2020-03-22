@@ -7,17 +7,8 @@ if (!process.env.GOOGLE_MAPS_API_KEY) {
 }
 
 function findCities(query) {
-  return (
-    client
-      .placeAutocomplete({
-        params: {
-          key: process.env.GOOGLE_MAPS_API_KEY,
-          input: query,
-          language: "ru"
-        },
-        timeout: 1000
-      })
-      /*.findPlaceFromText({
+  return client
+    .findPlaceFromText({
       params: {
         key: process.env.GOOGLE_MAPS_API_KEY,
         input: query,
@@ -25,24 +16,57 @@ function findCities(query) {
         fields: ["name"],
         language: "ru"
       },
-      timeout: 1000
-    })*/
-      .then(response => {
-        //console.log(response.data);
-        if (
-          response.data.status === "OK" &&
-          response.data.predictions[0].structured_formatting
-            .main_text_matched_substrings[0].length === query.length
-        ) {
-          return response.data.predictions[0].structured_formatting.main_text;
-        } else {
-          return response.data.status;
-        }
-      })
-      .catch(e => {
-        console.log(e);
-      })
-  );
+      timeout: 2000
+    })
+    .then(response => {
+      if (
+        response.data.status === "OK" &&
+        response.data.candidates[0].name.length === query.length
+      ) {
+        return response.data.candidates[0].name.toLowerCase();
+      } else {
+        //console.log("Error: " + response.data.status);
+        return response.data.status.toLowerCase();
+      }
+    })
+    .catch(e => {
+      console.log(e);
+    });
 }
 
-module.exports = { findCities };
+function findCitiesByLetter(query) {
+  return client
+    .placeAutocomplete({
+      params: {
+        key: process.env.GOOGLE_MAPS_API_KEY,
+        input: query,
+        language: "ru"
+      },
+      timeout: 2000
+    })
+    .then(response => {
+      let result = [];
+      if (
+        response.data.status === "OK" &&
+        response.data.predictions.length > 0
+      ) {
+        response.data.predictions.map(item =>
+          result.push(item.structured_formatting.main_text.toLowerCase())
+        );
+
+        let cities = result.map(item => {
+          if (item.includes("город ")) return item.slice(6);
+          else return item;
+        });
+        return cities;
+      } else {
+        console.log("Error: " + response.data.status);
+        return [];
+      }
+    })
+    .catch(e => {
+      console.log(e);
+    });
+}
+
+module.exports = { findCities, findCitiesByLetter };
