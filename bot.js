@@ -69,7 +69,7 @@ bot.on("message", msg => {
 
 async function startGame(chatID) {
   let gStart = await game.start(chatID);
-  if (gStart != null || gStart != undefined)
+  if (gStart !== null || gStart !== undefined)
     helpers.sendBulkMessages(bot, chatID, gStart.messages);
 }
 
@@ -89,7 +89,7 @@ async function processMessages(chatID, msg) {
     helpers.sendBulkMessages(bot, chatID, processEnteredCity.messages);
     game.deleteSession(chatID);
   }
-  if (processEnteredCity.errorMsg != "") {
+  if (processEnteredCity.errorMsg !== "") {
     bot.sendMessage(chatID, processEnteredCity.errorMsg);
   }
 }

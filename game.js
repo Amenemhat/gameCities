@@ -36,14 +36,14 @@ async function checkCityInGoogle(city) {
   if (foundCity === "over_query_limit") {
     return "Введите другой город!";
   }
-  if (city != foundCity || foundCity === "zero_results") {
+  if (city !== foundCity || foundCity === "zero_results") {
     return "Я такого города не знаю!";
   }
   return null;
 }
 
 function checkCityInDB(chatID, city, letter) {
-  if (letter != city[0]) {
+  if (letter !== city[0]) {
     return "Нужно назвать город на букву " + letter.toUpperCase();
   }
   if (sessions[chatID].spentCities.has(city)) {
@@ -56,7 +56,7 @@ async function selectCityByLetter(chatID, letter) {
   console.log("Ищем город на букву " + letter);
   let findCities = await places_api.findCitiesByLetter("город " + letter);
   let result = findCities.filter(
-    item => item[0] == letter && !sessions[chatID].spentCities.has(item)
+    item => item[0] === letter && !sessions[chatID].spentCities.has(item)
   );
   console.log(findCities);
   if (result.length === 0) {
@@ -73,7 +73,7 @@ async function start(chatID) {
   );
   let selectedCity = await selectCityByLetter(chatID, randomCity(alphabet));
 
-  if (selectedCity != null || selectedCity != undefined) {
+  if (selectedCity !== null || selectedCity !== undefined) {
     sessions[chatID].spentCities.add(selectedCity);
     lastLetter = lastValidLetter(selectedCity);
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
@@ -85,13 +85,13 @@ async function processEnteredCity(chatID, city) {
   let result = { messages: [], errorMsg: "" };
 
   let checkCityInGoogleResult = await checkCityInGoogle(city);
-  if (checkCityInGoogleResult != null) {
+  if (checkCityInGoogleResult !== null) {
     result.errorMsg = checkCityInGoogleResult;
     return result;
   }
 
   let checkCityInDBResult = checkCityInDB(chatID, city, lastLetter);
-  if (checkCityInDBResult != null) {
+  if (checkCityInDBResult !== null) {
     result.errorMsg = checkCityInDBResult;
     return result;
   }
