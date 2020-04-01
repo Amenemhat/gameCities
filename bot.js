@@ -1,4 +1,5 @@
 require("dotenv").config();
+
 let TelegramBot = require("node-telegram-bot-api");
 let game = require("./game.js");
 let helpers = require("./helpers.js");
