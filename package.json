@@ -1,25 +1,45 @@
 {
-  "name": "gamecities",
-  "version": "1.0.0",
-  "description": "Game Cities Telegram Bot",
-  "main": "index.js",
-  "dependencies": {
-    "@googlemaps/google-maps-services-js": "^2.3.1",
-    "dotenv": "^8.2.0",
-    "node-telegram-bot-api": "^0.40.0"
-  },
-  "devDependencies": {},
-  "scripts": {
-    "start": "node bot.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Amenemhat/gameCities.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/Amenemhat/gameCities/issues"
-  },
-  "homepage": "https://github.com/Amenemhat/gameCities#readme"
+    "name": "gamecities",
+    "version": "1.0.0",
+    "description": "Game Cities Telegram Bot",
+    "main": "index.js",
+    "dependencies": {
+        "@googlemaps/google-maps-services-js": "^2.3.1",
+        "dotenv": "^8.2.0",
+        "node-telegram-bot-api": "^0.40.0"
+    },
+    "devDependencies": {
+        "eslint": "^6.8.0",
+        "eslint-config-standard": "^14.1.1",
+        "eslint-plugin-import": "^2.20.2",
+        "eslint-plugin-node": "^11.1.0",
+        "eslint-plugin-promise": "^4.2.1",
+        "eslint-plugin-standard": "^4.0.1",
+        "lint-staged": "^10.1.0",
+        "pre-commit": "^1.2.2",
+        "prettier": "^2.0.2"
+    },
+    "scripts": {
+        "start": "node bot.js",
+        "eslintinit": "node_modules/.bin/eslint --init",
+        "precommit": "lint-staged"
+    },
+    "pre-commit": "precommit",
+    "lint-staged": {
+        "*.{js, jsx}": [
+            "node_modules/.bin/eslint --fix --max-warnings=1",
+            "prettier --write",
+            "git add ."
+        ]
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/Amenemhat/gameCities.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/Amenemhat/gameCities/issues"
+    },
+    "homepage": "https://github.com/Amenemhat/gameCities#readme"
 }

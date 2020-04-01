@@ -1,5 +1,4 @@
 require("dotenv").config();
-
 let TelegramBot = require("node-telegram-bot-api");
 let game = require("./game.js");
 let helpers = require("./helpers.js");
@@ -9,16 +8,16 @@ if (!process.env.TELEGRAM_TOKEN) {
 }
 
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
-
+//let varrr = 500;
 const commands = {
   START: /\/start/i,
   START_GAME: /начать/i,
-  STOP_GAME: /сдаюсь/i
+  STOP_GAME: /сдаюсь/i,
 };
 
-bot.on("polling_error", m => console.log(m));
+bot.on("polling_error", (m) => console.log(m));
 
-bot.onText(commands.START, msg => {
+bot.onText(commands.START, (msg) => {
   const chatID = msg.chat.id;
 
   if (!(chatID in game.sessions)) {
@@ -28,7 +27,7 @@ bot.onText(commands.START, msg => {
   }
 });
 
-bot.onText(commands.START_GAME, msg => {
+bot.onText(commands.START_GAME, (msg) => {
   const chatID = msg.chat.id;
 
   if (!(chatID in game.sessions)) {
@@ -37,7 +36,7 @@ bot.onText(commands.START_GAME, msg => {
   }
 });
 
-bot.onText(commands.STOP_GAME, msg => {
+bot.onText(commands.STOP_GAME, (msg) => {
   const chatID = msg.chat.id;
 
   if (chatID in game.sessions) {
@@ -51,9 +50,9 @@ bot.onText(commands.STOP_GAME, msg => {
   }
 });
 
-bot.on("message", msg => {
+bot.on("message", (msg) => {
   const chatID = msg.chat.id;
-  for (key in commands) {
+  for (let key in commands) {
     if (msg.text.match(commands[key])) return;
   }
 
