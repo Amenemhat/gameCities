@@ -1,11 +1,10 @@
 let places_api = require("./places_api.js");
 let helpers = require("./helpers.js");
 let alphabet = "абвгдежзийклмнопрстуфхцшщыэюя";
-let lastLetter = "";
 let sessions = {};
 
 function makeSession(chatID) {
-  sessions[chatID] = { spentCities: new Set() };
+  sessions[chatID] = { spentCities: new Set(), lastLetter: "" };
 }
 
 function deleteSession(chatID) {
@@ -56,7 +55,7 @@ async function selectCityByLetter(chatID, letter) {
   console.log("Ищем город на букву " + letter);
   let findCities = await places_api.findCitiesByLetter("город " + letter);
   let result = findCities.filter(
-    item => item[0] === letter && !sessions[chatID].spentCities.has(item)
+    (item) => item[0] === letter && !sessions[chatID].spentCities.has(item)
   );
   console.log(findCities);
   if (result.length === 0) {
@@ -73,12 +72,15 @@ async function start(chatID) {
   );
   let selectedCity = await selectCityByLetter(chatID, randomCity(alphabet));
 
-  if (selectedCity !== null || selectedCity !== undefined) {
+  if (selectedCity !== null && selectedCity !== undefined) {
     sessions[chatID].spentCities.add(selectedCity);
-    lastLetter = lastValidLetter(selectedCity);
+    sessions[chatID].lastLetter = lastValidLetter(selectedCity);
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
     return result;
-  } else return null;
+  } else {
+    result.messages.push("Ошибка выбора города!");
+    return result;
+  }
 }
 
 async function processEnteredCity(chatID, city) {
@@ -90,7 +92,11 @@ async function processEnteredCity(chatID, city) {
     return result;
   }
 
-  let checkCityInDBResult = checkCityInDB(chatID, city, lastLetter);
+  let checkCityInDBResult = checkCityInDB(
+    chatID,
+    city,
+    sessions[chatID].lastLetter
+  );
   if (checkCityInDBResult !== null) {
     result.errorMsg = checkCityInDBResult;
     return result;
@@ -107,7 +113,7 @@ async function processEnteredCity(chatID, city) {
     return result;
   } else {
     sessions[chatID].spentCities.add(selectedCity);
-    lastLetter = lastValidLetter(selectedCity);
+    sessions[chatID].lastLetter = lastValidLetter(selectedCity);
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
     return result;
   }
@@ -118,5 +124,5 @@ module.exports = {
   makeSession,
   deleteSession,
   start,
-  processEnteredCity
+  processEnteredCity,
 };

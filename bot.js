@@ -9,7 +9,7 @@ if (!process.env.TELEGRAM_TOKEN) {
 }
 
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
-//let varrr = 500;
+
 const commands = {
   START: /\/start/i,
   START_GAME: /начать/i,
@@ -53,6 +53,7 @@ bot.onText(commands.STOP_GAME, (msg) => {
 
 bot.on("message", (msg) => {
   const chatID = msg.chat.id;
+  console.log("chatID: " + chatID + ", message: " + msg.text);
   for (let key in commands) {
     if (msg.text.match(commands[key])) return;
   }
@@ -69,8 +70,16 @@ bot.on("message", (msg) => {
 
 async function startGame(chatID) {
   let gStart = await game.start(chatID);
-  if (gStart !== null || gStart !== undefined)
+  if (gStart.messages[1] === "Ошибка выбора города!") {
+    bot.sendMessage(chatID, gStart.messages[1]);
+    bot.sendMessage(
+      chatID,
+      "Игра окончена. \nДавай еще сыграем! \nДля начала напиши Начать."
+    );
+    game.deleteSession(chatID);
+  } else {
     helpers.sendBulkMessages(bot, chatID, gStart.messages);
+  }
 }
 
 async function processMessages(chatID, msg) {
