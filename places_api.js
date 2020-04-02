@@ -37,7 +37,7 @@ function findCitiesByLetter(query) {
   return client
     .placeAutocomplete({
       params: {
-        key: process.env.GOOGLE_MAPS_API_KEY,
+        key: process.env.GOOGLE_MAPS_API_KEY2,
         input: query,
         types: "(cities)",
         language: "ru"
@@ -45,7 +45,7 @@ function findCitiesByLetter(query) {
       timeout: 2000
     })
     .then(response => {
-      let result = [];
+      const result = [];
       if (
         response.data.status === "OK" &&
         response.data.predictions.length > 0
@@ -54,7 +54,7 @@ function findCitiesByLetter(query) {
           result.push(item.structured_formatting.main_text.toLowerCase())
         );
 
-        let cities = result.map(item => {
+        const cities = result.map(item => {
           if (item.includes("город ")) return item.slice(6);
           else {
             return item;

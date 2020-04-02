@@ -1,8 +1,8 @@
 require("dotenv").config();
 
-let TelegramBot = require("node-telegram-bot-api");
-let game = require("./game.js");
-let helpers = require("./helpers.js");
+const TelegramBot = require("node-telegram-bot-api");
+const game = require("./game.js");
+const helpers = require("./helpers.js");
 
 if (!process.env.TELEGRAM_TOKEN) {
   throw new Error("TELEGRAM_TOKEN env variable is missing");
@@ -22,7 +22,7 @@ bot.onText(commands.START, msg => {
   const chatID = msg.chat.id;
 
   if (!(chatID in game.sessions)) {
-    let welcomeMessage =
+    const welcomeMessage =
       "Приветствую тебя в игре Города.\nДля начала новой игры напиши Начать";
     bot.sendMessage(chatID, welcomeMessage);
   }
@@ -54,7 +54,7 @@ bot.onText(commands.STOP_GAME, msg => {
 bot.on("message", msg => {
   const chatID = msg.chat.id;
   console.log("chatID: " + chatID + ", message: " + msg.text);
-  for (let key in commands) {
+  for (const key in commands) {
     if (msg.text.match(commands[key])) return;
   }
 
@@ -69,7 +69,7 @@ bot.on("message", msg => {
 });
 
 async function startGame(chatID) {
-  let gStart = await game.start(chatID);
+  const gStart = await game.start(chatID);
   if (gStart.messages[1] === "Ошибка выбора города!") {
     bot.sendMessage(chatID, gStart.messages[1]);
     bot.sendMessage(
@@ -83,7 +83,7 @@ async function startGame(chatID) {
 }
 
 async function processMessages(chatID, msg) {
-  let processEnteredCity = await game.processEnteredCity(chatID, msg);
+  const processEnteredCity = await game.processEnteredCity(chatID, msg);
 
   if (
     processEnteredCity.errorMsg === "" &&

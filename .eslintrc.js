@@ -6,7 +6,6 @@ module.exports = {
     node: true
   },
   extends: ["eslint:recommended", "prettier"],
-  plugins: ["prettier"],
   globals: {
     Atomics: "readonly",
     SharedArrayBuffer: "readonly"
@@ -15,6 +14,14 @@ module.exports = {
     ecmaVersion: 2018
   },
   rules: {
+    "prefer-const": [
+      "warn",
+      {
+        destructuring: "any",
+        ignoreReadBeforeAssign: false
+      }
+    ],
+    "no-var": "warn",
     "linebreak-style": ["off", "unix"]
   }
 };
