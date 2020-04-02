@@ -55,7 +55,7 @@ async function selectCityByLetter(chatID, letter) {
   console.log("Ищем город на букву " + letter);
   let findCities = await places_api.findCitiesByLetter("город " + letter);
   let result = findCities.filter(
-    (item) => item[0] === letter && !sessions[chatID].spentCities.has(item)
+    item => item[0] === letter && !sessions[chatID].spentCities.has(item)
   );
   console.log(findCities);
   if (result.length === 0) {
@@ -124,5 +124,5 @@ module.exports = {
   makeSession,
   deleteSession,
   start,
-  processEnteredCity,
+  processEnteredCity
 };

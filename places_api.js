@@ -14,11 +14,11 @@ function findCities(query) {
         input: query,
         inputtype: "textquery",
         fields: ["name"],
-        language: "ru",
+        language: "ru"
       },
-      timeout: 2000,
+      timeout: 2000
     })
-    .then((response) => {
+    .then(response => {
       if (
         response.data.status === "OK" &&
         response.data.candidates[0].name.length === query.length
@@ -28,7 +28,7 @@ function findCities(query) {
         return response.data.status.toLowerCase();
       }
     })
-    .catch((e) => {
+    .catch(e => {
       console.log(e);
     });
 }
@@ -40,21 +40,21 @@ function findCitiesByLetter(query) {
         key: process.env.GOOGLE_MAPS_API_KEY,
         input: query,
         types: "(cities)",
-        language: "ru",
+        language: "ru"
       },
-      timeout: 2000,
+      timeout: 2000
     })
-    .then((response) => {
+    .then(response => {
       let result = [];
       if (
         response.data.status === "OK" &&
         response.data.predictions.length > 0
       ) {
-        response.data.predictions.map((item) =>
+        response.data.predictions.map(item =>
           result.push(item.structured_formatting.main_text.toLowerCase())
         );
 
-        let cities = result.map((item) => {
+        let cities = result.map(item => {
           if (item.includes("город ")) return item.slice(6);
           else {
             return item;
@@ -66,7 +66,7 @@ function findCitiesByLetter(query) {
         return [];
       }
     })
-    .catch((e) => {
+    .catch(e => {
       console.log(e);
     });
 }
