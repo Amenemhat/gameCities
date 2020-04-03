@@ -5,6 +5,9 @@ const client = new Client({});
 if (!process.env.GOOGLE_MAPS_API_KEY) {
   throw new Error("GOOGLE_MAPS_API_KEY env variable is missing");
 }
+if (!process.env.GOOGLE_MAPS_API_KEY2) {
+  throw new Error("GOOGLE_MAPS_API_KEY2 env variable is missing");
+}
 
 function findCities(query) {
   return client
@@ -27,9 +30,6 @@ function findCities(query) {
       } else {
         return response.data.status.toLowerCase();
       }
-    })
-    .catch(e => {
-      console.log(e);
     });
 }
 
@@ -62,12 +62,8 @@ function findCitiesByLetter(query) {
         });
         return cities;
       } else {
-        console.log("Error: " + response.data.status);
         return [];
       }
-    })
-    .catch(e => {
-      console.log(e);
     });
 }
 

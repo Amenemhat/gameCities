@@ -21,7 +21,8 @@ module.exports = {
         ignoreReadBeforeAssign: false
       }
     ],
-    "no-var": "warn",
-    "linebreak-style": ["off", "unix"]
+    "no-console": "error",
+    "no-var": "error",
+    "linebreak-style": ["warn", "unix"]
   }
 };

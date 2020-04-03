@@ -28,9 +28,7 @@ function lastValidLetter(str) {
 }
 
 async function checkCityInGoogle(city) {
-  console.log("Запрос: город " + city);
   const foundCity = await places_api.findCities(city);
-  console.log("Ответ: " + foundCity);
 
   if (foundCity === "over_query_limit") {
     return "Введите другой город!";
@@ -52,12 +50,11 @@ function checkCityInDB(chatID, city, letter) {
 }
 
 async function selectCityByLetter(chatID, letter) {
-  console.log("Ищем город на букву " + letter);
   const findCities = await places_api.findCitiesByLetter("город " + letter);
   const result = findCities.filter(
     item => item[0] === letter && !sessions[chatID].spentCities.has(item)
   );
-  console.log(findCities);
+
   if (result.length === 0) {
     return null;
   } else {

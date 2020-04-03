@@ -16,7 +16,9 @@ const commands = {
   STOP_GAME: /сдаюсь/i
 };
 
-bot.on("polling_error", m => console.log(m));
+bot.on("polling_error", m => {
+  throw new Error(m);
+});
 
 bot.onText(commands.START, msg => {
   const chatID = msg.chat.id;
@@ -53,7 +55,7 @@ bot.onText(commands.STOP_GAME, msg => {
 
 bot.on("message", msg => {
   const chatID = msg.chat.id;
-  console.log("chatID: " + chatID + ", message: " + msg.text);
+
   for (const key in commands) {
     if (msg.text.match(commands[key])) return;
   }
