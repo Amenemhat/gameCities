@@ -22,8 +22,8 @@
     "prettier": "^2.0.2"
   },
   "scripts": {
-    "start": "node bot.js",
-    "eslintinit": "node_modules/.bin/eslint --init",
+    "start": "node src/bot.js",
+    "lint": "eslint ./src/**/*.js",
     "precommit": "lint-staged"
   },
   "pre-commit": "precommit",
