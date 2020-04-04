@@ -52,7 +52,7 @@ function checkCityInDB(chatID, city, letter) {
 async function selectCityByLetter(chatID, letter) {
   const findCities = await places_api.findCitiesByLetter("город " + letter);
   const result = findCities.filter(
-    item => item[0] === letter && !sessions[chatID].spentCities.has(item)
+    (item) => item[0] === letter && !sessions[chatID].spentCities.has(item)
   );
 
   if (result.length === 0) {
@@ -89,11 +89,7 @@ async function processEnteredCity(chatID, city) {
     return result;
   }
 
-  const checkCityInDBResult = checkCityInDB(
-    chatID,
-    city,
-    sessions[chatID].lastLetter
-  );
+  const checkCityInDBResult = checkCityInDB(chatID, city, sessions[chatID].lastLetter);
   if (checkCityInDBResult !== null) {
     result.errorMsg = checkCityInDBResult;
     return result;
@@ -121,5 +117,5 @@ module.exports = {
   makeSession,
   deleteSession,
   start,
-  processEnteredCity
+  processEnteredCity,
 };

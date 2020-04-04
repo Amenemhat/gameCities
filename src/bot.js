@@ -13,24 +13,23 @@ const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
 const commands = {
   START: /\/start/i,
   START_GAME: /начать/i,
-  STOP_GAME: /сдаюсь/i
+  STOP_GAME: /сдаюсь/i,
 };
 
-bot.on("polling_error", m => {
+bot.on("polling_error", (m) => {
   throw new Error(m);
 });
 
-bot.onText(commands.START, msg => {
+bot.onText(commands.START, (msg) => {
   const chatID = msg.chat.id;
 
   if (!(chatID in game.sessions)) {
-    const welcomeMessage =
-      "Приветствую тебя в игре Города.\nДля начала новой игры напиши Начать";
+    const welcomeMessage = "Приветствую тебя в игре Города.\nДля начала новой игры напиши Начать";
     bot.sendMessage(chatID, welcomeMessage);
   }
 });
 
-bot.onText(commands.START_GAME, msg => {
+bot.onText(commands.START_GAME, (msg) => {
   const chatID = msg.chat.id;
 
   if (!(chatID in game.sessions)) {
@@ -39,7 +38,7 @@ bot.onText(commands.START_GAME, msg => {
   }
 });
 
-bot.onText(commands.STOP_GAME, msg => {
+bot.onText(commands.STOP_GAME, (msg) => {
   const chatID = msg.chat.id;
 
   if (chatID in game.sessions) {
@@ -53,7 +52,7 @@ bot.onText(commands.STOP_GAME, msg => {
   }
 });
 
-bot.on("message", msg => {
+bot.on("message", (msg) => {
   const chatID = msg.chat.id;
 
   for (const key in commands) {
@@ -74,10 +73,7 @@ async function startGame(chatID) {
   const gStart = await game.start(chatID);
   if (gStart.messages[1] === "Ошибка выбора города!") {
     bot.sendMessage(chatID, gStart.messages[1]);
-    bot.sendMessage(
-      chatID,
-      "Игра окончена. \nДавай еще сыграем! \nДля начала напиши Начать."
-    );
+    bot.sendMessage(chatID, "Игра окончена. \nДавай еще сыграем! \nДля начала напиши Начать.");
     game.deleteSession(chatID);
   } else {
     helpers.sendBulkMessages(bot, chatID, gStart.messages);
@@ -87,16 +83,10 @@ async function startGame(chatID) {
 async function processMessages(chatID, msg) {
   const processEnteredCity = await game.processEnteredCity(chatID, msg);
 
-  if (
-    processEnteredCity.errorMsg === "" &&
-    processEnteredCity.messages.length === 1
-  ) {
+  if (processEnteredCity.errorMsg === "" && processEnteredCity.messages.length === 1) {
     helpers.sendBulkMessages(bot, chatID, processEnteredCity.messages);
   }
-  if (
-    processEnteredCity.errorMsg === "" &&
-    processEnteredCity.messages.length > 1
-  ) {
+  if (processEnteredCity.errorMsg === "" && processEnteredCity.messages.length > 1) {
     helpers.sendBulkMessages(bot, chatID, processEnteredCity.messages);
     game.deleteSession(chatID);
   }
