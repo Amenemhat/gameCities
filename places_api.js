@@ -27,9 +27,6 @@ function findCities(query) {
       } else {
         return response.data.status.toLowerCase();
       }
-    })
-    .catch(e => {
-      console.log(e);
     });
 }
 
@@ -62,12 +59,8 @@ function findCitiesByLetter(query) {
         });
         return cities;
       } else {
-        console.log("Error: " + response.data.status);
         return [];
       }
-    })
-    .catch(e => {
-      console.log(e);
     });
 }
 

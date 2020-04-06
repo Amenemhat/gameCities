@@ -21,7 +21,8 @@ module.exports = {
         ignoreReadBeforeAssign: false
       }
     ],
+    "no-console": "warn",
     "no-var": "warn",
-    "linebreak-style": ["off", "unix"]
+    "no-unused-vars": "warn"
   }
 };

@@ -1,14 +1,71 @@
 const places_api = require("./places_api.js");
 const helpers = require("./helpers.js");
+const fs = require("fs");
 const alphabet = "абвгдежзийклмнопрстуфхцшщыэюя";
-const sessions = {};
+let sessions = readProgressFromFile();
+
+async function readProgressFromFile() {
+  await fs.readFile("progress.json", "utf8", function (err, data) {
+    if (err) {
+      throw new Error(err);
+    } else {
+      sessions = JSON.parse(data, (key, value) => {
+        if (key === "spentCities") {
+          return new Set(value);
+        }
+        return value;
+      });
+      //console.log("File read, sessions =");
+      //console.log(sessions);
+      return sessions;
+    }
+  });
+}
+
+function setInArr(set) {
+  const arr = [];
+  for (const key of set) {
+    arr.push(key);
+  }
+  return arr;
+}
+
+function cloneToJsonObject(sessionObj) {
+  const cloneObj = {};
+  for (const key in sessionObj) {
+    if (typeof sessionObj[key] === "object") {
+      if (key === "spentCities") {
+        cloneObj[key] = setInArr(sessionObj[key]);
+        continue;
+      }
+      cloneObj[key] = cloneToJsonObject(sessionObj[key]);
+    } else {
+      cloneObj[key] = sessionObj[key];
+    }
+  }
+  return cloneObj;
+}
+
+async function saveProgressToFile() {
+  //console.log("File save, sessions =");
+  //console.log(sessions);
+  const sessionsJsonObj = cloneToJsonObject(sessions);
+  const jsonContent = JSON.stringify(sessionsJsonObj);
+  await fs.writeFile("progress.json", jsonContent, "utf8", function (err) {
+    if (err) {
+      throw new Error(err);
+    }
+  });
+}
 
 function makeSession(chatID) {
   sessions[chatID] = { spentCities: new Set(), lastLetter: "" };
+  saveProgressToFile();
 }
 
 function deleteSession(chatID) {
   delete sessions[chatID];
+  saveProgressToFile();
 }
 
 function randomCity(arrCities) {
@@ -28,9 +85,7 @@ function lastValidLetter(str) {
 }
 
 async function checkCityInGoogle(city) {
-  console.log("Запрос: город " + city);
   const foundCity = await places_api.findCities(city);
-  console.log("Ответ: " + foundCity);
 
   if (foundCity === "over_query_limit") {
     return "Введите другой город!";
@@ -52,12 +107,11 @@ function checkCityInDB(chatID, city, letter) {
 }
 
 async function selectCityByLetter(chatID, letter) {
-  console.log("Ищем город на букву " + letter);
   const findCities = await places_api.findCitiesByLetter("город " + letter);
   const result = findCities.filter(
     item => item[0] === letter && !sessions[chatID].spentCities.has(item)
   );
-  console.log(findCities);
+
   if (result.length === 0) {
     return null;
   } else {
@@ -75,6 +129,7 @@ async function start(chatID) {
   if (selectedCity !== null && selectedCity !== undefined) {
     sessions[chatID].spentCities.add(selectedCity);
     sessions[chatID].lastLetter = lastValidLetter(selectedCity);
+    await saveProgressToFile();
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
     return result;
   } else {
@@ -103,6 +158,7 @@ async function processEnteredCity(chatID, city) {
   }
 
   sessions[chatID].spentCities.add(city);
+  saveProgressToFile();
   const selectedCity = await selectCityByLetter(chatID, lastValidLetter(city));
   if (selectedCity === null || selectedCity === undefined) {
     result.messages.push(
@@ -114,6 +170,7 @@ async function processEnteredCity(chatID, city) {
   } else {
     sessions[chatID].spentCities.add(selectedCity);
     sessions[chatID].lastLetter = lastValidLetter(selectedCity);
+    saveProgressToFile();
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
     return result;
   }
@@ -121,6 +178,7 @@ async function processEnteredCity(chatID, city) {
 
 module.exports = {
   sessions,
+  readProgressFromFile,
   makeSession,
   deleteSession,
   start,
