@@ -1,0 +1,73 @@
+####################
+# Defaults
+####################
+defaults: &js_defaults
+  docker:
+    - image: circleci/node:lts
+      environment:
+        ## this enables colors in the output
+        TERM: xterm
+  working_directory: ~/game-cities-bot
+
+version: 2.1
+
+####################
+# Custom jobs
+####################
+jobs:
+  checkout_code:
+    <<: *js_defaults
+    steps:
+      - checkout
+      - persist_to_workspace:
+          root: .
+          paths: .
+  install_deps:
+    <<: *js_defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - restore_cache:
+          name: Restore Cache
+          keys:
+            - npm-packages-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install Dependencies
+          command: npm ci
+      - save_cache:
+          name: Save Cache
+          key: npm-packages-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.cache
+      - persist_to_workspace:
+          root: .
+          paths: .
+
+  lint:
+    <<: *js_defaults
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: Eslint
+          command: yarn lint
+      - run:
+          name: Ensure prettier was run
+          command: yarn prettier --check './**/*.{ts,tsx,js,jsx,json,md,mdx,html,css}'
+
+####################
+# Workflow
+####################
+workflows:
+  build_and_test:
+    jobs:
+      - checkout_code
+      - install_deps:
+          name: "Install deps"
+          requires:
+            - checkout_code
+
+      - lint:
+          name: "Run linters"
+          requires:
+            - "Install deps"

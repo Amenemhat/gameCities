@@ -1,16 +1,15 @@
 const places_api = require("./places_api.js");
 const helpers = require("./helpers.js");
 const fs = require("fs");
+const progressFile = "./progress.json";
 const alphabet = "абвгдежзийклмнопрстуфхцшщыэюя";
 
 function readProgressFromFile() {
-  //console.log("readProgressFromFile");
   return new Promise((resolve, reject) => {
-    fs.readFile("progress.json", "utf8", function (err, data) {
+    fs.readFile(progressFile, "utf8", function (err, data) {
       if (err) {
         reject(err);
       } else {
-        //console.log("data = " + data); //Иногда возникает ошибка
         if (data === "") {
           resolve({});
         } else {
@@ -53,29 +52,27 @@ function cloneToJsonObject(sessionObj) {
 }
 
 async function saveProgressToFile(sessions) {
-  //console.log("saveProgressToFile");
   const sessionsJsonObj = cloneToJsonObject(sessions);
   const jsonContent = JSON.stringify(sessionsJsonObj);
-  await fs.writeFile("progress.json", jsonContent, "utf8", function (err) {
+
+  await fs.writeFile(progressFile, jsonContent, "utf8", function (err) {
     if (err) {
       throw new Error(err);
     }
   });
 }
 
-async function makeSession(chatID, sessions) {
-  //console.log("makeSession");
+async function makeSession(chatID) {
+  const sessions = {};
   sessions[chatID] = { spentCities: new Set(), lastLetter: "" };
-  //console.log(sessions);
-  await saveProgressToFile();
-  //console.log(sessions);
+
+  await saveProgressToFile(sessions);
+  return sessions;
 }
 
 async function deleteSession(chatID, sessions) {
-  //console.log("deleteSession");
   delete sessions[chatID];
-  await saveProgressToFile();
-  //console.log(sessions);
+  await saveProgressToFile(sessions);
 }
 
 function randomCity(arrCities) {
@@ -83,7 +80,6 @@ function randomCity(arrCities) {
 }
 
 function lastValidLetter(str) {
-  //console.log("lastValidLetter");
   let lastLetter = str[str.length - 1];
   const invalidLetters = ["ь", "ъ"];
   let i = 2;
@@ -96,7 +92,6 @@ function lastValidLetter(str) {
 }
 
 async function checkCityInGoogle(chatID, sessions, city) {
-  //console.log("checkCityInGoogle");
   const foundCity = await places_api.findCities(city);
 
   if (foundCity === "over_query_limit") {
@@ -112,7 +107,6 @@ async function checkCityInGoogle(chatID, sessions, city) {
 }
 
 function checkCityInDB(chatID, sessions, city, letter) {
-  //console.log("checkCityInDB");
   if (letter !== city[0]) {
     return "Нужно назвать город на букву " + letter.toUpperCase();
   }
@@ -123,10 +117,9 @@ function checkCityInDB(chatID, sessions, city, letter) {
 }
 
 async function selectCityByLetter(chatID, sessions, letter) {
-  //console.log("selectCityByLetter");
   const findCities = await places_api.findCitiesByLetter("город " + letter);
   const result = findCities.filter(
-    item => item[0] === letter && !sessions[chatID].spentCities.has(item)
+    (item) => item[0] === letter && !sessions[chatID].spentCities.has(item)
   );
 
   if (result.length === 0) {
@@ -137,21 +130,17 @@ async function selectCityByLetter(chatID, sessions, letter) {
 }
 
 async function start(chatID, sessions) {
-  //console.log("start");
-  //console.log(sessions);
+  const selectedCity = await selectCityByLetter(chatID, sessions, randomCity(alphabet));
   const result = { messages: [] };
   result.messages.push(
     "Начинаем игру. \nЯ называю город, а ты должен в ответ назвать любой город \nначинающийся на последнюю букву моего города.\nГорода не должны повторятся."
   );
-  const selectedCity = await selectCityByLetter(chatID, randomCity(alphabet));
 
   if (selectedCity !== null && selectedCity !== undefined) {
     sessions[chatID].spentCities.add(selectedCity);
     sessions[chatID].lastLetter = lastValidLetter(selectedCity);
-    saveProgressToFile();
+    saveProgressToFile(sessions);
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
-    //console.log("start, sessions =");
-    //console.log(sessions);
 
     return result;
   } else {
@@ -161,37 +150,27 @@ async function start(chatID, sessions) {
 }
 
 async function processEnteredCity(chatID, sessions, city) {
-  //console.log("processEnteredCity");
-  //console.log(sessions);
-  await readProgressFromFile().then(result => {
+  const result = { messages: [], errorMsg: "" };
+  await readProgressFromFile().then((result) => {
     sessions = result;
   });
-  //console.log(sessions);
 
-  const result = { messages: [], errorMsg: "" };
-
-  const checkCityInGoogleResult = await checkCityInGoogle(chatID, city);
+  const checkCityInGoogleResult = await checkCityInGoogle(chatID, sessions, city);
   if (checkCityInGoogleResult !== null) {
     result.errorMsg = checkCityInGoogleResult;
     return result;
   }
 
-  const checkCityInDBResult = checkCityInDB(
-    chatID,
-    city,
-    sessions[chatID].lastLetter
-  );
+  const checkCityInDBResult = checkCityInDB(chatID, sessions, city, sessions[chatID].lastLetter);
   if (checkCityInDBResult !== null) {
     result.errorMsg = checkCityInDBResult;
     return result;
   }
 
   sessions[chatID].spentCities.add(city);
-  saveProgressToFile();
-  //console.log("processEnteredCity spentCities.add, sessions =");
-  //console.log(sessions);
+  saveProgressToFile(sessions);
+  const selectedCity = await selectCityByLetter(chatID, sessions, lastValidLetter(city));
 
-  const selectedCity = await selectCityByLetter(chatID, lastValidLetter(city));
   if (selectedCity === null || selectedCity === undefined) {
     result.messages.push(
       "Игра окончена, я проиграл! \nГорода которые были названы:\n" +
@@ -202,9 +181,7 @@ async function processEnteredCity(chatID, sessions, city) {
   } else {
     sessions[chatID].spentCities.add(selectedCity);
     sessions[chatID].lastLetter = lastValidLetter(selectedCity);
-    saveProgressToFile();
-    //console.log("processEnteredCity lastLetter, sessions =");
-    //console.log(sessions);
+    saveProgressToFile(sessions);
 
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
     return result;
@@ -216,5 +193,5 @@ module.exports = {
   makeSession,
   deleteSession,
   start,
-  processEnteredCity
+  processEnteredCity,
 };
