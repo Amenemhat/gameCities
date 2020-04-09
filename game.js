@@ -2,7 +2,6 @@ const places_api = require("./places_api.js");
 const helpers = require("./helpers.js");
 const fs = require("fs");
 const alphabet = "абвгдежзийклмнопрстуфхцшщыэюя";
-let sessions = {};
 
 function readProgressFromFile() {
   //console.log("readProgressFromFile");
@@ -53,7 +52,7 @@ function cloneToJsonObject(sessionObj) {
   return cloneObj;
 }
 
-async function saveProgressToFile() {
+async function saveProgressToFile(sessions) {
   //console.log("saveProgressToFile");
   const sessionsJsonObj = cloneToJsonObject(sessions);
   const jsonContent = JSON.stringify(sessionsJsonObj);
@@ -64,7 +63,7 @@ async function saveProgressToFile() {
   });
 }
 
-async function makeSession(chatID) {
+async function makeSession(chatID, sessions) {
   //console.log("makeSession");
   sessions[chatID] = { spentCities: new Set(), lastLetter: "" };
   //console.log(sessions);
@@ -72,7 +71,7 @@ async function makeSession(chatID) {
   //console.log(sessions);
 }
 
-async function deleteSession(chatID) {
+async function deleteSession(chatID, sessions) {
   //console.log("deleteSession");
   delete sessions[chatID];
   await saveProgressToFile();
@@ -96,7 +95,7 @@ function lastValidLetter(str) {
   return lastLetter;
 }
 
-async function checkCityInGoogle(chatID, city) {
+async function checkCityInGoogle(chatID, sessions, city) {
   //console.log("checkCityInGoogle");
   const foundCity = await places_api.findCities(city);
 
@@ -112,7 +111,7 @@ async function checkCityInGoogle(chatID, city) {
   return null;
 }
 
-function checkCityInDB(chatID, city, letter) {
+function checkCityInDB(chatID, sessions, city, letter) {
   //console.log("checkCityInDB");
   if (letter !== city[0]) {
     return "Нужно назвать город на букву " + letter.toUpperCase();
@@ -123,7 +122,7 @@ function checkCityInDB(chatID, city, letter) {
   return null;
 }
 
-async function selectCityByLetter(chatID, letter) {
+async function selectCityByLetter(chatID, sessions, letter) {
   //console.log("selectCityByLetter");
   const findCities = await places_api.findCitiesByLetter("город " + letter);
   const result = findCities.filter(
@@ -137,7 +136,7 @@ async function selectCityByLetter(chatID, letter) {
   }
 }
 
-async function start(chatID) {
+async function start(chatID, sessions) {
   //console.log("start");
   //console.log(sessions);
   const result = { messages: [] };
@@ -161,7 +160,7 @@ async function start(chatID) {
   }
 }
 
-async function processEnteredCity(chatID, city) {
+async function processEnteredCity(chatID, sessions, city) {
   //console.log("processEnteredCity");
   //console.log(sessions);
   await readProgressFromFile().then(result => {
@@ -213,7 +212,6 @@ async function processEnteredCity(chatID, city) {
 }
 
 module.exports = {
-  sessions,
   readProgressFromFile,
   makeSession,
   deleteSession,
