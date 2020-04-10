@@ -13,47 +13,15 @@ function readProgressFromFile() {
         if (data === "") {
           resolve({});
         } else {
-          resolve(
-            JSON.parse(data, (key, value) => {
-              if (key === "spentCities") {
-                return new Set(value);
-              }
-              return value;
-            })
-          );
+          resolve(JSON.parse(data));
         }
       }
     });
   });
 }
 
-function setInArr(set) {
-  const arr = [];
-  for (const key of set) {
-    arr.push(key);
-  }
-  return arr;
-}
-
-function cloneToJsonObject(sessionObj) {
-  const cloneObj = {};
-  for (const key in sessionObj) {
-    if (typeof sessionObj[key] === "object") {
-      if (key === "spentCities") {
-        cloneObj[key] = setInArr(sessionObj[key]);
-        continue;
-      }
-      cloneObj[key] = cloneToJsonObject(sessionObj[key]);
-    } else {
-      cloneObj[key] = sessionObj[key];
-    }
-  }
-  return cloneObj;
-}
-
 async function saveProgressToFile(sessions) {
-  const sessionsJsonObj = cloneToJsonObject(sessions);
-  const jsonContent = JSON.stringify(sessionsJsonObj);
+  const jsonContent = JSON.stringify(sessions);
 
   await fs.writeFile(progressFile, jsonContent, "utf8", function (err) {
     if (err) {
@@ -64,7 +32,7 @@ async function saveProgressToFile(sessions) {
 
 async function makeSession(chatID) {
   const sessions = {};
-  sessions[chatID] = { spentCities: new Set(), lastLetter: "" };
+  sessions[chatID] = { spentCities: [], lastLetter: "" };
 
   await saveProgressToFile(sessions);
   return sessions;
@@ -110,7 +78,7 @@ function checkCityInDB(chatID, sessions, city, letter) {
   if (letter !== city[0]) {
     return "Нужно назвать город на букву " + letter.toUpperCase();
   }
-  if (sessions[chatID].spentCities.has(city)) {
+  if (sessions[chatID].spentCities.includes(city)) {
     return "Этот город уже был назван!";
   }
   return null;
@@ -119,7 +87,7 @@ function checkCityInDB(chatID, sessions, city, letter) {
 async function selectCityByLetter(chatID, sessions, letter) {
   const findCities = await places_api.findCitiesByLetter("город " + letter);
   const result = findCities.filter(
-    (item) => item[0] === letter && !sessions[chatID].spentCities.has(item)
+    (item) => item[0] === letter && !sessions[chatID].spentCities.includes(item)
   );
 
   if (result.length === 0) {
@@ -136,8 +104,12 @@ async function start(chatID, sessions) {
     "Начинаем игру. \nЯ называю город, а ты должен в ответ назвать любой город \nначинающийся на последнюю букву моего города.\nГорода не должны повторятся."
   );
 
-  if (selectedCity !== null && selectedCity !== undefined) {
-    sessions[chatID].spentCities.add(selectedCity);
+  if (
+    selectedCity !== null &&
+    selectedCity !== undefined &&
+    !sessions[chatID].spentCities.includes(selectedCity)
+  ) {
+    sessions[chatID].spentCities.push(selectedCity);
     sessions[chatID].lastLetter = lastValidLetter(selectedCity);
     saveProgressToFile(sessions);
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
@@ -167,7 +139,7 @@ async function processEnteredCity(chatID, sessions, city) {
     return result;
   }
 
-  sessions[chatID].spentCities.add(city);
+  sessions[chatID].spentCities.push(city);
   saveProgressToFile(sessions);
   const selectedCity = await selectCityByLetter(chatID, sessions, lastValidLetter(city));
 
@@ -179,7 +151,7 @@ async function processEnteredCity(chatID, sessions, city) {
     result.messages.push("Давай сыграем еще! \nДля начала напиши Начать.");
     return result;
   } else {
-    sessions[chatID].spentCities.add(selectedCity);
+    sessions[chatID].spentCities.push(selectedCity);
     sessions[chatID].lastLetter = lastValidLetter(selectedCity);
     saveProgressToFile(sessions);
 

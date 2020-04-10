@@ -11,6 +11,8 @@ const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
 const commands = {
   START: /\/start/i,
   START_GAME: /начать/i,
+  START_NEW_GAME: /заново/i,
+  CONTINUE_GAME: /продолжить/i,
   STOP_GAME: /сдаюсь/i,
 };
 
@@ -18,6 +20,7 @@ bot.on("polling_error", (m) => {
   throw new Error(m);
 });
 
+bot.onText(commands.START, onStart);
 async function onStart(msg) {
   const chatID = msg.chat.id;
   const sessions = await game.readProgressFromFile();
@@ -25,10 +28,15 @@ async function onStart(msg) {
   if (!(chatID in sessions)) {
     const welcomeMessage = "Приветствую тебя в игре Города.\nДля начала новой игры напиши Начать";
     bot.sendMessage(chatID, welcomeMessage);
+  } else {
+    bot.sendMessage(
+      chatID,
+      "У вас есть незавершенная игра. Для продолжения напишите Продолжить \nЕсли хотите начать новую игру напишите Заново"
+    );
   }
 }
-bot.onText(commands.START, onStart);
 
+bot.onText(commands.START_GAME, onStartGame);
 async function onStartGame(msg) {
   const chatID = msg.chat.id;
   let sessions = await game.readProgressFromFile();
@@ -39,12 +47,50 @@ async function onStartGame(msg) {
   } else {
     bot.sendMessage(
       chatID,
-      'У вас есть незаконченная игра. Для продолжения напишите "Продолжить" \nЕсли хотите начать новую игру напишите "Новая игра"'
+      "У вас есть незавершенная игра. Для продолжения напишите Продолжить \nЕсли хотите начать новую игру напишите Заново"
     );
   }
 }
-bot.onText(commands.START_GAME, onStartGame);
 
+bot.onText(commands.CONTINUE_GAME, onContinueGame);
+async function onContinueGame(msg) {
+  const chatID = msg.chat.id;
+  const sessions = await game.readProgressFromFile();
+
+  if (chatID in sessions) {
+    bot.sendMessage(
+      chatID,
+      "Давай продолжим. \nВот города которые были названы:\n" +
+        [...sessions[chatID].spentCities].join(", ") +
+        "\nНужно назвать город на букву " +
+        sessions[chatID].lastLetter.toUpperCase()
+    );
+  } else {
+    bot.sendMessage(
+      chatID,
+      "Список доступных команд:\n/start\nНачать\nДля начала игры напиши Начать"
+    );
+  }
+}
+
+bot.onText(commands.START_NEW_GAME, onNewGame);
+async function onNewGame(msg) {
+  const chatID = msg.chat.id;
+  let sessions = await game.readProgressFromFile();
+
+  if (chatID in sessions) {
+    await game.deleteSession(chatID, sessions);
+    sessions = await game.makeSession(chatID);
+    startGame(chatID, sessions);
+  } else {
+    bot.sendMessage(
+      chatID,
+      "Список доступных команд:\n/start\nНачать\nДля начала игры напиши Начать"
+    );
+  }
+}
+
+bot.onText(commands.STOP_GAME, onStopGame);
 async function onStopGame(msg) {
   const chatID = msg.chat.id;
   const sessions = await game.readProgressFromFile();
@@ -56,10 +102,15 @@ async function onStopGame(msg) {
     );
     bot.sendMessage(chatID, "Давай еще сыграем! \nДля начала напиши Начать.");
     await game.deleteSession(chatID, sessions);
+  } else {
+    bot.sendMessage(
+      chatID,
+      "Список доступных команд:\n/start\nНачать\nДля начала игры напиши Начать"
+    );
   }
 }
-bot.onText(commands.STOP_GAME, onStopGame);
 
+bot.on("message", onMessage);
 async function onMessage(msg) {
   const chatID = msg.chat.id;
   for (const key in commands) {
@@ -72,11 +123,10 @@ async function onMessage(msg) {
   } else {
     bot.sendMessage(
       chatID,
-      "Список доступных команд:\n/start\nНачать\nСдаюсь\nДля начала игры напиши Начать"
+      "Список доступных команд:\n/start\nНачать\nДля начала игры напиши Начать"
     );
   }
 }
-bot.on("message", onMessage);
 
 async function startGame(chatID, sessions) {
   const gStart = await game.start(chatID, sessions);
