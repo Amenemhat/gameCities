@@ -5,6 +5,9 @@ const client = new Client({});
 if (!process.env.GOOGLE_MAPS_API_KEY) {
   throw new Error("GOOGLE_MAPS_API_KEY env variable is missing");
 }
+if (!process.env.GOOGLE_MAPS_API_KEY2) {
+  throw new Error("GOOGLE_MAPS_API_KEY2 env variable is missing");
+}
 
 if (!process.env.GOOGLE_MAPS_API_KEY2) {
   throw new Error("GOOGLE_MAPS_API_KEY2 env variable is missing");
