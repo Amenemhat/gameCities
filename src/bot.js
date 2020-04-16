@@ -2,6 +2,7 @@ require("dotenv").config();
 const TelegramBot = require("node-telegram-bot-api");
 const game = require("./game.js");
 const helpers = require("./helpers.js");
+const db = require("./db.js");
 
 if (!process.env.TELEGRAM_TOKEN) {
   throw new Error("TELEGRAM_TOKEN env variable is missing");
@@ -23,7 +24,7 @@ bot.on("polling_error", (m) => {
 bot.onText(commands.START, onStart);
 async function onStart(msg) {
   const chatID = msg.chat.id;
-  const sessions = await game.readProgressFromFile();
+  const sessions = await db.readProgressFromFile();
 
   if (!(chatID in sessions)) {
     const welcomeMessage = "Приветствую тебя в игре Города.\nДля начала новой игры напиши Начать";
@@ -39,10 +40,10 @@ async function onStart(msg) {
 bot.onText(commands.START_GAME, onStartGame);
 async function onStartGame(msg) {
   const chatID = msg.chat.id;
-  let sessions = await game.readProgressFromFile();
+  let sessions = await db.readProgressFromFile();
 
   if (!(chatID in sessions)) {
-    sessions = await game.makeSession(sessions, chatID);
+    sessions = await db.makeSession(sessions, chatID);
     startGame(chatID, sessions);
   } else {
     bot.sendMessage(
@@ -55,7 +56,7 @@ async function onStartGame(msg) {
 bot.onText(commands.CONTINUE_GAME, onContinueGame);
 async function onContinueGame(msg) {
   const chatID = msg.chat.id;
-  const sessions = await game.readProgressFromFile();
+  const sessions = await db.readProgressFromFile();
 
   if (chatID in sessions) {
     bot.sendMessage(
@@ -76,11 +77,11 @@ async function onContinueGame(msg) {
 bot.onText(commands.START_NEW_GAME, onNewGame);
 async function onNewGame(msg) {
   const chatID = msg.chat.id;
-  let sessions = await game.readProgressFromFile();
+  let sessions = await db.readProgressFromFile();
 
   if (chatID in sessions) {
-    await game.deleteSession(chatID, sessions);
-    sessions = await game.makeSession(sessions, chatID);
+    await db.deleteSession(chatID, sessions);
+    sessions = await db.makeSession(sessions, chatID);
     startGame(chatID, sessions);
   } else {
     bot.sendMessage(
@@ -93,7 +94,7 @@ async function onNewGame(msg) {
 bot.onText(commands.STOP_GAME, onStopGame);
 async function onStopGame(msg) {
   const chatID = msg.chat.id;
-  const sessions = await game.readProgressFromFile();
+  const sessions = await db.readProgressFromFile();
 
   if (chatID in sessions) {
     bot.sendMessage(
@@ -101,7 +102,7 @@ async function onStopGame(msg) {
       "Я выиграл!!! \nГорода которые были названы:\n" + [...sessions[chatID].spentCities].join(", ")
     );
     bot.sendMessage(chatID, "Давай еще сыграем! \nДля начала напиши Начать.");
-    await game.deleteSession(chatID, sessions);
+    await db.deleteSession(chatID, sessions);
   } else {
     bot.sendMessage(
       chatID,
@@ -116,7 +117,7 @@ async function onMessage(msg) {
   for (const key in commands) {
     if (msg.text.match(commands[key])) return;
   }
-  const sessions = await game.readProgressFromFile();
+  const sessions = await db.readProgressFromFile();
 
   if (chatID in sessions) {
     processMessages(chatID, sessions, msg.text.toLowerCase());
@@ -134,8 +135,8 @@ async function startGame(chatID, sessions) {
   if (gStart.messages[1] === "Ошибка выбора города!") {
     bot.sendMessage(chatID, gStart.messages[1]);
     bot.sendMessage(chatID, "Игра окончена. \nДавай еще сыграем! \nДля начала напиши Начать.");
-    game.deleteSession(chatID, sessions);
-    game.readProgressFromFile().then((result) => {
+    db.deleteSession(chatID, sessions);
+    db.readProgressFromFile().then((result) => {
       sessions = result;
     });
   } else {
@@ -151,8 +152,8 @@ async function processMessages(chatID, sessions, msg) {
   }
   if (processEnteredCity.errorMsg === "" && processEnteredCity.messages.length > 1) {
     helpers.sendBulkMessages(bot, chatID, processEnteredCity.messages);
-    game.deleteSession(chatID, sessions);
-    game.readProgressFromFile().then((result) => {
+    db.deleteSession(chatID, sessions);
+    db.readProgressFromFile().then((result) => {
       sessions = result;
     });
   }

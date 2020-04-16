@@ -1,45 +1,7 @@
 const places_api = require("./places_api.js");
 const helpers = require("./helpers.js");
-const fs = require("fs");
-const progressFile = "./progress.json";
+const db = require("./db.js");
 const alphabet = "абвгдежзийклмнопрстуфхцшщыэюя";
-
-function readProgressFromFile() {
-  return new Promise((resolve, reject) => {
-    fs.readFile(progressFile, "utf8", function (err, data) {
-      if (err) {
-        reject(err);
-      } else {
-        if (data === "") {
-          resolve({});
-        } else {
-          resolve(JSON.parse(data));
-        }
-      }
-    });
-  });
-}
-
-async function saveProgressToFile(sessions) {
-  const jsonContent = JSON.stringify(sessions, null, "  ");
-
-  await fs.writeFile(progressFile, jsonContent, "utf8", function (err) {
-    if (err) {
-      throw new Error(err);
-    }
-  });
-}
-
-async function makeSession(sessions, chatID) {
-  sessions[chatID] = { spentCities: [], lastLetter: "" };
-  await saveProgressToFile(sessions);
-  return sessions;
-}
-
-async function deleteSession(chatID, sessions) {
-  delete sessions[chatID];
-  await saveProgressToFile(sessions);
-}
 
 function randomCity(arrCities) {
   return arrCities[helpers.getRandomNumber(arrCities.length)];
@@ -109,7 +71,7 @@ async function start(chatID, sessions) {
   ) {
     sessions[chatID].spentCities.push(selectedCity);
     sessions[chatID].lastLetter = lastValidLetter(selectedCity);
-    saveProgressToFile(sessions);
+    db.saveProgressToFile(sessions);
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
 
     return result;
@@ -121,7 +83,7 @@ async function start(chatID, sessions) {
 
 async function processEnteredCity(chatID, sessions, city) {
   const result = { messages: [], errorMsg: "" };
-  await readProgressFromFile().then((result) => {
+  await db.readProgressFromFile().then((result) => {
     sessions = result;
   });
 
@@ -138,7 +100,7 @@ async function processEnteredCity(chatID, sessions, city) {
   }
 
   sessions[chatID].spentCities.push(city);
-  saveProgressToFile(sessions);
+  db.saveProgressToFile(sessions);
   const selectedCity = await selectCityByLetter(chatID, sessions, lastValidLetter(city));
 
   if (selectedCity === null || selectedCity === undefined) {
@@ -151,7 +113,7 @@ async function processEnteredCity(chatID, sessions, city) {
   } else {
     sessions[chatID].spentCities.push(selectedCity);
     sessions[chatID].lastLetter = lastValidLetter(selectedCity);
-    saveProgressToFile(sessions);
+    db.saveProgressToFile(sessions);
 
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
     return result;
@@ -159,9 +121,6 @@ async function processEnteredCity(chatID, sessions, city) {
 }
 
 module.exports = {
-  readProgressFromFile,
-  makeSession,
-  deleteSession,
   start,
   processEnteredCity,
 };
