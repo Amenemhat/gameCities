@@ -21,7 +21,7 @@ function readProgressFromFile() {
 }
 
 async function saveProgressToFile(sessions) {
-  const jsonContent = JSON.stringify(sessions);
+  const jsonContent = JSON.stringify(sessions, null, "  ");
 
   await fs.writeFile(progressFile, jsonContent, "utf8", function (err) {
     if (err) {
@@ -30,10 +30,8 @@ async function saveProgressToFile(sessions) {
   });
 }
 
-async function makeSession(chatID) {
-  const sessions = {};
+async function makeSession(sessions, chatID) {
   sessions[chatID] = { spentCities: [], lastLetter: "" };
-
   await saveProgressToFile(sessions);
   return sessions;
 }

@@ -42,7 +42,7 @@ async function onStartGame(msg) {
   let sessions = await game.readProgressFromFile();
 
   if (!(chatID in sessions)) {
-    sessions = await game.makeSession(chatID);
+    sessions = await game.makeSession(sessions, chatID);
     startGame(chatID, sessions);
   } else {
     bot.sendMessage(
@@ -80,7 +80,7 @@ async function onNewGame(msg) {
 
   if (chatID in sessions) {
     await game.deleteSession(chatID, sessions);
-    sessions = await game.makeSession(chatID);
+    sessions = await game.makeSession(sessions, chatID);
     startGame(chatID, sessions);
   } else {
     bot.sendMessage(
