@@ -3,6 +3,7 @@ const TelegramBot = require("node-telegram-bot-api");
 const game = require("./game.js");
 const helpers = require("./helpers.js");
 const db = require("./db.js");
+const lang = require("./lang.js");
 
 if (!process.env.TELEGRAM_TOKEN) {
   throw new Error("TELEGRAM_TOKEN env variable is missing");
@@ -16,24 +17,33 @@ const commands = {
   CONTINUE_GAME: /продолжить/i,
   STOP_GAME: /сдаюсь/i,
 };
+command();
 
 bot.on("polling_error", (m) => {
   throw new Error(m);
 });
 
-bot.onText(commands.START, onStart);
+async function command() {
+  const botMessages = await lang.readLang();
+
+  bot.onText(botMessages.commands.START, onStart);
+  bot.onText(botMessages.commands.START_GAME, onStartGame);
+  bot.onText(botMessages.commands.CONTINUE_GAME, onContinueGame);
+  bot.onText(botMessages.commands.START_NEW_GAME, onNewGame);
+  bot.onText(botMessages.commands.STOP_GAME, onStopGame);
+  bot.on("message", onMessage);
+}
+
 async function onStart(msg) {
+  const botMessages = await lang.readLang(msg.from.language_code);
+
   const chatID = msg.chat.id;
   const sessions = await db.readProgressFromFile();
 
   if (!(chatID in sessions)) {
-    const welcomeMessage = "Приветствую тебя в игре Города.\nДля начала новой игры напиши Начать";
-    bot.sendMessage(chatID, welcomeMessage);
+    bot.sendMessage(chatID, botMessages.WELCOME);
   } else {
-    bot.sendMessage(
-      chatID,
-      "У вас есть незавершенная игра. Для продолжения напишите Продолжить \nЕсли хотите начать новую игру напишите Заново"
-    );
+    bot.sendMessage(chatID, botMessages.CONTINUE);
   }
 }
 
