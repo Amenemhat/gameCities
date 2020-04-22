@@ -1,17 +1,17 @@
 const fs = require("fs");
 const langFileRu = "./lang_ru.json";
 const langFileEn = "./lang_en.json";
-const defaultLanguage = "ru";
+const defaultLanguage = "en";
 
 async function readLang(language = defaultLanguage) {
-  if (language === defaultLanguage) {
-    return await readObjectFromJsonFile(langFileRu);
+  if (language === "ru") {
+    return await readLangFile(langFileRu);
   } else {
-    return await readObjectFromJsonFile(langFileEn);
+    return await readLangFile(langFileEn);
   }
 }
 
-function readObjectFromJsonFile(jsonFile) {
+function readLangFile(jsonFile) {
   return new Promise((resolve, reject) => {
     fs.readFile(jsonFile, "utf8", function (err, data) {
       if (err) {
@@ -42,7 +42,4 @@ function regexpFromObj(obj) {
   return result;
 }
 
-module.exports = {
-  readLang,
-  readObjectFromJsonFile,
-};
+module.exports = { readLang };

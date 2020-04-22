@@ -1,33 +1,32 @@
 {
   "language": "en",
-  "WELCOME": "Приветствую тебя в игре Города \nДля смены языка напишите English \nДля начала новой игры напиши Начать",
-  "CONTINUE": "У вас есть незавершенная игра \nДля продолжения напишите Продолжить \nЕсли хотите начать новую игру напишите Заново",
-  "LIST_OF_COMMANDS": "Список доступных команд:\n/start\nНачать\nДля начала игры напиши Начать",
-  "WIN_MESSAGE": "Я выиграл!!! \nГорода которые были названы:\n",
-  "LETS_PLAY_AGAIN": "Давай еще сыграем! \nДля начала напиши Начать",
-  "LOOSE_MESSAGE": "Игра окончена \nДавай еще сыграем! \nДля начала напиши Начать.",
-  "LOOSE_BOT": "Игра окончена, я проиграл! \nГорода которые были названы:\n",
-  "CITY": "город ",
-  "START_GAME": "Начинаем игру \nЯ называю город, а ты должен в ответ назвать любой город \nначинающийся на последнюю букву моего города.\nГорода не должны повторяться",
+  "WELCOME": "I greet you in the game Cities \nTo start a new game, write Start game",
+  "CONTINUE": "You have an incomplete game \nTo continue, write Continue \nIf you want to start a new game, write Again",
+  "LIST_OF_COMMANDS": "The list of available commands: \n/ start \nStart game \nTo start the game, write Start game",
+  "WIN_MESSAGE": "I won!!! \nCities that were named:\n",
+  "LETS_PLAY_AGAIN": "Let's play some more! \nTo start, write Start game",
+  "LOOSE_MESSAGE": "Game over \nLet's play again! \nTo start the game, write Start game",
+  "LOOSE_BOT": "The game is over, I lost! \nCities that were named:\n",
+  "CITY": "city ",
+  "START_GAME": "We start the game \nI name the city, and you should answer any city \n beginning with the last letter of my city. \nCities should not be repeated \nTo stop the game write I give up",
   "continueGame": {
-    "LETS_PLAY": "Давай продолжим \nВот города которые были названы:\n",
-    "CITY_ON_LETTER": "\nНужно назвать город на букву "
+    "LETS_PLAY": "Let's continue \nHere are the cities that were named:\n",
+    "CITY_ON_LETTER": "\nIt is necessary to name the city by letter "
   },
   "error": {
-    "SELECT_CITY": "Ошибка выбора города!",
-    "ENTER_ANOTHER_CITY": "Введите другой город!",
-    "UNKNOWN_CITY": "Я такого города не знаю! \nНужно назвать город на букву ",
-    "CITY_ON_LETTER": "Нужно назвать город на букву ",
-    "THIS_IS_SPENT_CITY": "Этот город уже был назван!"
+    "SELECT_CITY": "Error choosing a city!",
+    "ENTER_ANOTHER_CITY": "Enter another city!",
+    "UNKNOWN_CITY": "I don’t know such a city! \nYou need to name the city by letter ",
+    "CITY_ON_LETTER": "It is necessary to name the city by letter ",
+    "THIS_IS_SPENT_CITY": "This city has already been named!"
   },
   "commands": {
     "START": "/start",
-    "START_GAME": "начать",
-    "START_NEW_GAME": "заново",
-    "CONTINUE_GAME": "продолжить",
-    "STOP_GAME": "сдаюсь",
-    "LANGUAGE_RU": "русский",
-    "LANGUAGE_EN": "english"
+    "START_GAME": "start game",
+    "START_NEW_GAME": "again",
+    "CONTINUE_GAME": "continue",
+    "STOP_GAME": "i give up"
   },
-  "alphabet": "абвгдежзийклмнопрстуфхцшщыэюя"
+  "alphabet": "abcdefghijklmnopqrstuvwxyz",
+  "invalidLetters": []
 }

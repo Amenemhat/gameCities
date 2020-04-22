@@ -1,7 +1,8 @@
 const places_api = require("./places_api.js");
 const helpers = require("./helpers.js");
 const db = require("./db.js");
-const alphabet = "абвгдежзийклмнопрстуфхцшщыэюя";
+const lang = require("./lang.js");
+let botMessages = {};
 
 function randomCity(arrCities) {
   return arrCities[helpers.getRandomNumber(arrCities.length)];
@@ -9,10 +10,9 @@ function randomCity(arrCities) {
 
 function lastValidLetter(str) {
   let lastLetter = str[str.length - 1];
-  const invalidLetters = ["ь", "ъ"];
   let i = 2;
 
-  while (invalidLetters.includes(lastLetter)) {
+  while (botMessages.invalidLetters.includes(lastLetter)) {
     lastLetter = str[str.length - i];
     i++;
   }
@@ -20,32 +20,32 @@ function lastValidLetter(str) {
 }
 
 async function checkCityInGoogle(chatID, sessions, city) {
-  const foundCity = await places_api.findCities(city);
+  const foundCity = await places_api.findCities(city, botMessages.language);
 
   if (foundCity === "over_query_limit") {
-    return "Введите другой город!";
+    return botMessages.error.ENTER_ANOTHER_CITY;
   }
   if (city !== foundCity || foundCity === "zero_results") {
-    return (
-      "Я такого города не знаю! \nНужно назвать город на букву " +
-      sessions[chatID].lastLetter.toUpperCase()
-    );
+    return botMessages.error.UNKNOWN_CITY + sessions[chatID].lastLetter.toUpperCase();
   }
   return null;
 }
 
 function checkCityInDB(chatID, sessions, city, letter) {
   if (letter !== city[0]) {
-    return "Нужно назвать город на букву " + letter.toUpperCase();
+    return botMessages.error.CITY_ON_LETTER + letter.toUpperCase();
   }
   if (sessions[chatID].spentCities.includes(city)) {
-    return "Этот город уже был назван!";
+    return botMessages.error.THIS_IS_SPENT_CITY;
   }
   return null;
 }
 
 async function selectCityByLetter(chatID, sessions, letter) {
-  const findCities = await places_api.findCitiesByLetter("город " + letter);
+  const findCities = await places_api.findCitiesByLetter(
+    botMessages.CITY + letter,
+    botMessages.language
+  );
   const result = findCities.filter(
     (item) => item[0] === letter && !sessions[chatID].spentCities.includes(item)
   );
@@ -57,12 +57,11 @@ async function selectCityByLetter(chatID, sessions, letter) {
   }
 }
 
-async function start(chatID, sessions) {
-  const selectedCity = await selectCityByLetter(chatID, sessions, randomCity(alphabet));
+async function start(chatID, sessions, langCode) {
+  botMessages = await lang.readLang(langCode);
+  const selectedCity = await selectCityByLetter(chatID, sessions, randomCity(botMessages.alphabet));
   const result = { messages: [] };
-  result.messages.push(
-    "Начинаем игру. \nЯ называю город, а ты должен в ответ назвать любой город \nначинающийся на последнюю букву моего города.\nГорода не должны повторятся."
-  );
+  result.messages.push(botMessages.START_GAME);
 
   if (
     selectedCity !== null &&
@@ -76,13 +75,14 @@ async function start(chatID, sessions) {
 
     return result;
   } else {
-    result.messages.push("Ошибка выбора города!");
+    result.messages.push(botMessages.error.SELECT_CITY);
     return result;
   }
 }
 
-async function processEnteredCity(chatID, sessions, city) {
+async function processEnteredCity(chatID, sessions, city, langCode) {
   const result = { messages: [], errorMsg: "" };
+  botMessages = await lang.readLang(langCode);
   await db.readProgressFromFile().then((result) => {
     sessions = result;
   });
@@ -104,11 +104,8 @@ async function processEnteredCity(chatID, sessions, city) {
   const selectedCity = await selectCityByLetter(chatID, sessions, lastValidLetter(city));
 
   if (selectedCity === null || selectedCity === undefined) {
-    result.messages.push(
-      "Игра окончена, я проиграл! \nГорода которые были названы:\n" +
-        [...sessions[chatID].spentCities].join(", ")
-    );
-    result.messages.push("Давай сыграем еще! \nДля начала напиши Начать.");
+    result.messages.push(botMessages.LOOSE_BOT + [...sessions[chatID].spentCities].join(", "));
+    result.messages.push(botMessages.LETS_PLAY_AGAIN);
     return result;
   } else {
     sessions[chatID].spentCities.push(selectedCity);

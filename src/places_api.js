@@ -1,6 +1,8 @@
 require("dotenv").config();
 const Client = require("@googlemaps/google-maps-services-js").Client;
 const client = new Client({});
+const lang = require("./lang.js");
+let botMessages = {};
 
 if (!process.env.GOOGLE_MAPS_API_KEY) {
   throw new Error("GOOGLE_MAPS_API_KEY env variable is missing");
@@ -10,7 +12,7 @@ if (!process.env.GOOGLE_MAPS_API_KEY2) {
   throw new Error("GOOGLE_MAPS_API_KEY2 env variable is missing");
 }
 
-function findCities(query) {
+function findCities(query, langCode) {
   return client
     .findPlaceFromText({
       params: {
@@ -18,7 +20,7 @@ function findCities(query) {
         input: query,
         inputtype: "textquery",
         fields: ["name"],
-        language: "ru",
+        language: langCode,
       },
       timeout: 2000,
     })
@@ -34,14 +36,15 @@ function findCities(query) {
     });
 }
 
-function findCitiesByLetter(query) {
+async function findCitiesByLetter(query, langCode) {
+  botMessages = await lang.readLang(langCode);
   return client
     .placeAutocomplete({
       params: {
         key: process.env.GOOGLE_MAPS_API_KEY,
         input: query,
         types: "(cities)",
-        language: "ru",
+        language: langCode,
       },
       timeout: 2000,
     })
@@ -53,7 +56,7 @@ function findCitiesByLetter(query) {
         );
 
         const cities = result.map((item) => {
-          if (item.includes("город ")) return item.slice(6);
+          if (item.includes(botMessages.CITY)) return item.slice(botMessages.CITY.length);
           else {
             return item;
           }
