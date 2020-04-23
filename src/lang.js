@@ -1,9 +1,8 @@
 const fs = require("fs");
 const langFileRu = "./lang_ru.json";
 const langFileEn = "./lang_en.json";
-const defaultLanguage = "en";
 
-async function readLang(language = defaultLanguage) {
+async function readLang(language) {
   if (language === "ru") {
     return await readLangFile(langFileRu);
   } else {

@@ -4,28 +4,49 @@ const game = require("./game.js");
 const helpers = require("./helpers.js");
 const db = require("./db.js");
 const lang = require("./lang.js");
+let botMessages = {};
 
 if (!process.env.TELEGRAM_TOKEN) {
   throw new Error("TELEGRAM_TOKEN env variable is missing");
 }
-
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
-let botMessages = {};
-commands();
-
 bot.on("polling_error", (m) => {
   throw new Error(m);
 });
 
-async function commands() {
-  botMessages = await lang.readLang();
+bot.on("message", onMessage);
 
-  bot.onText(botMessages.commands.START, onStart);
-  bot.onText(botMessages.commands.START_GAME, onStartGame);
-  bot.onText(botMessages.commands.CONTINUE_GAME, onContinueGame);
-  bot.onText(botMessages.commands.START_NEW_GAME, onNewGame);
-  bot.onText(botMessages.commands.STOP_GAME, onStopGame);
-  bot.on("message", onMessage);
+async function onMessage(msg) {
+  const chatID = msg.chat.id;
+  botMessages = await lang.readLang(msg.from.language_code);
+
+  if (msg.text.match(botMessages.commands.START) !== null) {
+    onStart(msg);
+    return;
+  }
+  if (msg.text.match(botMessages.commands.START_GAME) !== null) {
+    onStartGame(msg);
+    return;
+  }
+  if (msg.text.match(botMessages.commands.CONTINUE_GAME) !== null) {
+    onContinueGame(msg);
+    return;
+  }
+  if (msg.text.match(botMessages.commands.START_NEW_GAME) !== null) {
+    onNewGame(msg);
+    return;
+  }
+  if (msg.text.match(botMessages.commands.STOP_GAME) !== null) {
+    onStopGame(msg);
+    return;
+  }
+
+  const sessions = await db.readProgressFromFile();
+  if (chatID in sessions) {
+    processMessages(chatID, sessions, msg.text.toLowerCase());
+  } else {
+    bot.sendMessage(chatID, botMessages.LIST_OF_COMMANDS);
+  }
 }
 
 async function onStart(msg) {
@@ -99,21 +120,6 @@ async function onStopGame(msg) {
   }
 }
 
-async function onMessage(msg) {
-  const chatID = msg.chat.id;
-  botMessages = await lang.readLang(msg.from.language_code);
-
-  for (const key in botMessages.commands) {
-    if (msg.text.match(botMessages.commands[key])) return null;
-  }
-  const sessions = await db.readProgressFromFile();
-  if (chatID in sessions) {
-    processMessages(chatID, sessions, msg.text.toLowerCase());
-  } else {
-    bot.sendMessage(chatID, botMessages.LIST_OF_COMMANDS);
-  }
-}
-
 async function startGame(chatID, sessions) {
   const gStart = await game.start(chatID, sessions, botMessages.language);
 
@@ -130,7 +136,12 @@ async function startGame(chatID, sessions) {
 }
 
 async function processMessages(chatID, sessions, msg) {
-  const processEnteredCity = await game.processEnteredCity(chatID, sessions, msg);
+  const processEnteredCity = await game.processEnteredCity(
+    chatID,
+    sessions,
+    msg,
+    botMessages.language
+  );
 
   if (processEnteredCity.errorMsg === "" && processEnteredCity.messages.length === 1) {
     helpers.sendBulkMessages(bot, chatID, processEnteredCity.messages);
