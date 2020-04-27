@@ -24,25 +24,22 @@ async function onMessage(msg) {
   const chatID = msg.chat.id;
   i18n.setLocale(msg.from.language_code);
 
-  if (msg.text.match(i18n.__("CMD_START")) !== null) {
-    onStart(msg);
-    return;
-  }
-  if (msg.text.match(i18n.__("CMD_START_GAME")) !== null) {
-    onStartGame(msg);
-    return;
-  }
-  if (msg.text.match(i18n.__("CMD_CONTINUE_GAME")) !== null) {
-    onContinueGame(msg);
-    return;
-  }
-  if (msg.text.match(i18n.__("CMD_START_NEW_GAME")) !== null) {
-    onNewGame(msg);
-    return;
-  }
-  if (msg.text.match(i18n.__("CMD_STOP_GAME")) !== null) {
-    onStopGame(msg);
-    return;
+  switch (true) {
+    case msg.text.match(new RegExp(i18n.__("CMD_START"), "i")) !== null:
+      onStart(msg);
+      return;
+    case msg.text.match(new RegExp(i18n.__("CMD_START_GAME"), "i")) !== null:
+      onStartGame(msg);
+      return;
+    case msg.text.match(new RegExp(i18n.__("CMD_CONTINUE_GAME"), "i")) !== null:
+      onContinueGame(msg);
+      return;
+    case msg.text.match(new RegExp(i18n.__("CMD_START_NEW_GAME"), "i")) !== null:
+      onNewGame(msg);
+      return;
+    case msg.text.match(new RegExp(i18n.__("CMD_STOP_GAME"), "i")) !== null:
+      onStopGame(msg);
+      return;
   }
 
   const sessions = await db.readProgressFromFile();
