@@ -1,12 +1,11 @@
 require("dotenv").config();
 const Client = require("@googlemaps/google-maps-services-js").Client;
 const client = new Client({});
-const i18n = require("i18n");
-
-i18n.configure({
-  locales: ["en", "ru"],
-  directory: "locales",
+const I18nt = require("i18n-t");
+const i18nt = new I18nt({
+  defaultLocale: "en",
 });
+i18nt.load("locales");
 
 if (!process.env.GOOGLE_MAPS_API_KEY) {
   throw new Error("GOOGLE_MAPS_API_KEY env variable is missing");
@@ -16,7 +15,7 @@ if (!process.env.GOOGLE_MAPS_API_KEY2) {
   throw new Error("GOOGLE_MAPS_API_KEY2 env variable is missing");
 }
 
-function findCities(query, langCode) {
+function findCities(query, lang) {
   return client
     .findPlaceFromText({
       params: {
@@ -24,7 +23,7 @@ function findCities(query, langCode) {
         input: query,
         inputtype: "textquery",
         fields: ["name"],
-        language: langCode,
+        language: lang,
       },
       timeout: 2000,
     })
@@ -40,15 +39,14 @@ function findCities(query, langCode) {
     });
 }
 
-async function findCitiesByLetter(query, langCode) {
-  i18n.setLocale(langCode);
+async function findCitiesByLetter(query, lang) {
   return client
     .placeAutocomplete({
       params: {
         key: process.env.GOOGLE_MAPS_API_KEY,
         input: query,
         types: "(cities)",
-        language: langCode,
+        language: lang,
       },
       timeout: 2000,
     })
@@ -60,7 +58,7 @@ async function findCitiesByLetter(query, langCode) {
         );
 
         const cities = result.map((item) => {
-          if (item.includes(i18n.__("CITY"))) return item.slice(i18n.__("CITY").length);
+          if (item.includes(i18nt.t(lang, "CITY"))) return item.slice(i18nt.t(lang, "CITY").length);
           else {
             return item;
           }
