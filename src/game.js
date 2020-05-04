@@ -1,53 +1,55 @@
 const places_api = require("./places_api.js");
 const helpers = require("./helpers.js");
 const db = require("./db.js");
-const alphabet = "абвгдежзийклмнопрстуфхцшщыэюя";
 
 function randomCity(arrCities) {
   return arrCities[helpers.getRandomNumber(arrCities.length)];
 }
 
-function lastValidLetter(str) {
+function lastValidLetter(str, botContext) {
   let lastLetter = str[str.length - 1];
-  const invalidLetters = ["ь", "ъ"];
   let i = 2;
 
-  while (invalidLetters.includes(lastLetter)) {
+  while (botContext.translate("INVALID_LETTERS").includes(lastLetter)) {
     lastLetter = str[str.length - i];
     i++;
   }
   return lastLetter;
 }
 
-async function checkCityInGoogle(chatID, sessions, city) {
-  const foundCity = await places_api.findCities(city);
+async function checkCityInGoogle(botContext) {
+  const foundCity = await places_api.findCities(botContext);
 
   if (foundCity === "over_query_limit") {
-    return "Введите другой город!";
+    return botContext.translate("ERR_ENTER_ANOTHER_CITY");
   }
-  if (city !== foundCity || foundCity === "zero_results") {
+  if (botContext.text !== foundCity || foundCity === "zero_results") {
     return (
-      "Я такого города не знаю! \nНужно назвать город на букву " +
-      sessions[chatID].lastLetter.toUpperCase()
+      botContext.translate("ERR_UNKNOWN_CITY") +
+      botContext.sessions[botContext.chatID].lastLetter.toUpperCase()
     );
   }
   return null;
 }
 
-function checkCityInDB(chatID, sessions, city, letter) {
-  if (letter !== city[0]) {
-    return "Нужно назвать город на букву " + letter.toUpperCase();
+function checkCityInDB(botContext, letter) {
+  if (letter !== botContext.text[0]) {
+    return botContext.translate("ERR_CITY_ON_LETTER") + letter.toUpperCase();
   }
-  if (sessions[chatID].spentCities.includes(city)) {
-    return "Этот город уже был назван!";
+  if (botContext.sessions[botContext.chatID].spentCities.includes(botContext.text)) {
+    return botContext.translate("ERR_THIS_IS_SPENT_CITY");
   }
   return null;
 }
 
-async function selectCityByLetter(chatID, sessions, letter) {
-  const findCities = await places_api.findCitiesByLetter("город " + letter);
+async function selectCityByLetter(botContext, letter) {
+  const findCities = await places_api.findCitiesByLetter(
+    botContext,
+    botContext.translate("CITY") + letter
+  );
   const result = findCities.filter(
-    (item) => item[0] === letter && !sessions[chatID].spentCities.includes(item)
+    (item) =>
+      item[0] === letter && !botContext.sessions[botContext.chatID].spentCities.includes(item)
   );
 
   if (result.length === 0) {
@@ -57,63 +59,70 @@ async function selectCityByLetter(chatID, sessions, letter) {
   }
 }
 
-async function start(chatID, sessions) {
-  const selectedCity = await selectCityByLetter(chatID, sessions, randomCity(alphabet));
-  const result = { messages: [] };
-  result.messages.push(
-    "Начинаем игру. \nЯ называю город, а ты должен в ответ назвать любой город \nначинающийся на последнюю букву моего города.\nГорода не должны повторятся."
+async function start(botContext) {
+  const selectedCity = await selectCityByLetter(
+    botContext,
+    randomCity(botContext.translate("ALPHABET"))
   );
+  const result = { messages: [] };
+  result.messages.push(botContext.translate("START_GAME"));
 
   if (
     selectedCity !== null &&
     selectedCity !== undefined &&
-    !sessions[chatID].spentCities.includes(selectedCity)
+    !botContext.sessions[botContext.chatID].spentCities.includes(selectedCity)
   ) {
-    sessions[chatID].spentCities.push(selectedCity);
-    sessions[chatID].lastLetter = lastValidLetter(selectedCity);
-    db.saveProgressToFile(sessions);
+    botContext.sessions[botContext.chatID].spentCities.push(selectedCity);
+    botContext.sessions[botContext.chatID].lastLetter = lastValidLetter(selectedCity, botContext);
+    db.saveProgressToFile(botContext.sessions);
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
 
     return result;
   } else {
-    result.messages.push("Ошибка выбора города!");
+    result.messages.push(botContext.translate("ERR_SELECT_CITY"));
     return result;
   }
 }
 
-async function processEnteredCity(chatID, sessions, city) {
+async function processEnteredCity(botContext) {
   const result = { messages: [], errorMsg: "" };
   await db.readProgressFromFile().then((result) => {
-    sessions = result;
+    botContext.sessions = result;
   });
 
-  const checkCityInGoogleResult = await checkCityInGoogle(chatID, sessions, city);
+  const checkCityInGoogleResult = await checkCityInGoogle(botContext);
   if (checkCityInGoogleResult !== null) {
     result.errorMsg = checkCityInGoogleResult;
     return result;
   }
 
-  const checkCityInDBResult = checkCityInDB(chatID, sessions, city, sessions[chatID].lastLetter);
+  const checkCityInDBResult = checkCityInDB(
+    botContext,
+    botContext.sessions[botContext.chatID].lastLetter
+  );
   if (checkCityInDBResult !== null) {
     result.errorMsg = checkCityInDBResult;
     return result;
   }
 
-  sessions[chatID].spentCities.push(city);
-  db.saveProgressToFile(sessions);
-  const selectedCity = await selectCityByLetter(chatID, sessions, lastValidLetter(city));
+  botContext.sessions[botContext.chatID].spentCities.push(botContext.text);
+  db.saveProgressToFile(botContext.sessions);
+  const selectedCity = await selectCityByLetter(
+    botContext,
+    lastValidLetter(botContext.text, botContext)
+  );
 
   if (selectedCity === null || selectedCity === undefined) {
     result.messages.push(
-      "Игра окончена, я проиграл! \nГорода которые были названы:\n" +
-        [...sessions[chatID].spentCities].join(", ")
+      botContext.translate("LOOSE_BOT") +
+        [...botContext.sessions[botContext.chatID].spentCities].join(", ")
     );
-    result.messages.push("Давай сыграем еще! \nДля начала напиши Начать.");
+    result.messages.push(botContext.translate("LETS_PLAY_AGAIN"));
     return result;
   } else {
-    sessions[chatID].spentCities.push(selectedCity);
-    sessions[chatID].lastLetter = lastValidLetter(selectedCity);
-    db.saveProgressToFile(sessions);
+    botContext.sessions[botContext.chatID].spentCities.push(selectedCity);
+    botContext.sessions[botContext.chatID].lastLetter = lastValidLetter(selectedCity, botContext);
+    db.saveProgressToFile(botContext.sessions);
 
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
     return result;

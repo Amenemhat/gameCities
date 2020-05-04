@@ -10,22 +10,22 @@ if (!process.env.GOOGLE_MAPS_API_KEY2) {
   throw new Error("GOOGLE_MAPS_API_KEY2 env variable is missing");
 }
 
-function findCities(query) {
+function findCities(botContext) {
   return client
     .findPlaceFromText({
       params: {
         key: process.env.GOOGLE_MAPS_API_KEY2,
-        input: query,
+        input: botContext.text,
         inputtype: "textquery",
         fields: ["name"],
-        language: "ru",
+        language: botContext.lang,
       },
       timeout: 2000,
     })
     .then((response) => {
       if (
         response.data.status === "OK" &&
-        response.data.candidates[0].name.length === query.length
+        response.data.candidates[0].name.length === botContext.text.length
       ) {
         return response.data.candidates[0].name.toLowerCase();
       } else {
@@ -34,14 +34,14 @@ function findCities(query) {
     });
 }
 
-function findCitiesByLetter(query) {
+async function findCitiesByLetter(botContext, query) {
   return client
     .placeAutocomplete({
       params: {
         key: process.env.GOOGLE_MAPS_API_KEY,
         input: query,
         types: "(cities)",
-        language: "ru",
+        language: botContext.lang,
       },
       timeout: 2000,
     })
@@ -53,7 +53,8 @@ function findCitiesByLetter(query) {
         );
 
         const cities = result.map((item) => {
-          if (item.includes("город ")) return item.slice(6);
+          if (item.includes(botContext.translate("CITY")))
+            return item.slice(botContext.translate("CITY").length);
           else {
             return item;
           }

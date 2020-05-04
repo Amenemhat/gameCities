@@ -3,161 +3,138 @@ const TelegramBot = require("node-telegram-bot-api");
 const game = require("./game.js");
 const helpers = require("./helpers.js");
 const db = require("./db.js");
+const I18nt = require("i18n-t");
+const i18nt = new I18nt({
+  defaultLocale: "en",
+});
+i18nt.load("locales");
 
 if (!process.env.TELEGRAM_TOKEN) {
   throw new Error("TELEGRAM_TOKEN env variable is missing");
 }
-
 const bot = new TelegramBot(process.env.TELEGRAM_TOKEN, { polling: true });
-const commands = {
-  START: /\/start/i,
-  START_GAME: /начать/i,
-  START_NEW_GAME: /заново/i,
-  CONTINUE_GAME: /продолжить/i,
-  STOP_GAME: /сдаюсь/i,
-};
-
 bot.on("polling_error", (m) => {
   throw new Error(m);
 });
 
-bot.onText(commands.START, onStart);
-async function onStart(msg) {
-  const chatID = msg.chat.id;
-  const sessions = await db.readProgressFromFile();
-
-  if (!(chatID in sessions)) {
-    const welcomeMessage = "Приветствую тебя в игре Города.\nДля начала новой игры напиши Начать";
-    bot.sendMessage(chatID, welcomeMessage);
-  } else {
-    bot.sendMessage(
-      chatID,
-      "У вас есть незавершенная игра. Для продолжения напишите Продолжить \nЕсли хотите начать новую игру напишите Заново"
-    );
-  }
-}
-
-bot.onText(commands.START_GAME, onStartGame);
-async function onStartGame(msg) {
-  const chatID = msg.chat.id;
-  let sessions = await db.readProgressFromFile();
-
-  if (!(chatID in sessions)) {
-    sessions = await db.makeSession(sessions, chatID);
-    startGame(chatID, sessions);
-  } else {
-    bot.sendMessage(
-      chatID,
-      "У вас есть незавершенная игра. Для продолжения напишите Продолжить \nЕсли хотите начать новую игру напишите Заново"
-    );
-  }
-}
-
-bot.onText(commands.CONTINUE_GAME, onContinueGame);
-async function onContinueGame(msg) {
-  const chatID = msg.chat.id;
-  const sessions = await db.readProgressFromFile();
-
-  if (chatID in sessions) {
-    bot.sendMessage(
-      chatID,
-      "Давай продолжим. \nВот города которые были названы:\n" +
-        [...sessions[chatID].spentCities].join(", ") +
-        "\nНужно назвать город на букву " +
-        sessions[chatID].lastLetter.toUpperCase()
-    );
-  } else {
-    bot.sendMessage(
-      chatID,
-      "Список доступных команд:\n/start\nНачать\nДля начала игры напиши Начать"
-    );
-  }
-}
-
-bot.onText(commands.START_NEW_GAME, onNewGame);
-async function onNewGame(msg) {
-  const chatID = msg.chat.id;
-  let sessions = await db.readProgressFromFile();
-
-  if (chatID in sessions) {
-    await db.deleteSession(chatID, sessions);
-    sessions = await db.makeSession(sessions, chatID);
-    startGame(chatID, sessions);
-  } else {
-    bot.sendMessage(
-      chatID,
-      "Список доступных команд:\n/start\nНачать\nДля начала игры напиши Начать"
-    );
-  }
-}
-
-bot.onText(commands.STOP_GAME, onStopGame);
-async function onStopGame(msg) {
-  const chatID = msg.chat.id;
-  const sessions = await db.readProgressFromFile();
-
-  if (chatID in sessions) {
-    bot.sendMessage(
-      chatID,
-      "Я выиграл!!! \nГорода которые были названы:\n" + [...sessions[chatID].spentCities].join(", ")
-    );
-    bot.sendMessage(chatID, "Давай еще сыграем! \nДля начала напиши Начать.");
-    await db.deleteSession(chatID, sessions);
-  } else {
-    bot.sendMessage(
-      chatID,
-      "Список доступных команд:\n/start\nНачать\nДля начала игры напиши Начать"
-    );
-  }
-}
-
 bot.on("message", onMessage);
-async function onMessage(msg) {
-  const chatID = msg.chat.id;
-  for (const key in commands) {
-    if (msg.text.match(commands[key])) return;
-  }
-  const sessions = await db.readProgressFromFile();
 
-  if (chatID in sessions) {
-    processMessages(chatID, sessions, msg.text.toLowerCase());
+async function onMessage(msg) {
+  const lang = msg.from.language_code;
+  const localize = (key) => i18nt.t(lang, key);
+  const botContext = { translate: localize, chatID: msg.chat.id, text: msg.text.toLowerCase() };
+  botContext.sessions = await db.readProgressFromFile();
+
+  switch (true) {
+    case botContext.text.match(new RegExp(botContext.translate("CMD_START"), "i")) !== null:
+      onStart(botContext);
+      return;
+    case botContext.text.match(new RegExp(botContext.translate("CMD_START_GAME"), "i")) !== null:
+      onStartGame(botContext);
+      return;
+    case botContext.text.match(new RegExp(botContext.translate("CMD_CONTINUE_GAME"), "i")) !== null:
+      onContinueGame(botContext);
+      return;
+    case botContext.text.match(new RegExp(botContext.translate("CMD_START_NEW_GAME"), "i")) !==
+      null:
+      onNewGame(botContext);
+      return;
+    case botContext.text.match(new RegExp(botContext.translate("CMD_STOP_GAME"), "i")) !== null:
+      onStopGame(botContext);
+      return;
+  }
+
+  if (botContext.chatID in botContext.sessions) {
+    processMessages(botContext);
   } else {
-    bot.sendMessage(
-      chatID,
-      "Список доступных команд:\n/start\nНачать\nДля начала игры напиши Начать"
-    );
+    bot.sendMessage(botContext.chatID, botContext.translate("LIST_OF_COMMANDS"));
   }
 }
 
-async function startGame(chatID, sessions) {
-  const gStart = await game.start(chatID, sessions);
+async function onStart(botContext) {
+  if (!(botContext.chatID in botContext.sessions)) {
+    bot.sendMessage(botContext.chatID, botContext.translate("WELCOME"));
+  } else {
+    bot.sendMessage(botContext.chatID, botContext.translate("CONTINUE"));
+  }
+}
 
-  if (gStart.messages[1] === "Ошибка выбора города!") {
-    bot.sendMessage(chatID, gStart.messages[1]);
-    bot.sendMessage(chatID, "Игра окончена. \nДавай еще сыграем! \nДля начала напиши Начать.");
-    db.deleteSession(chatID, sessions);
+async function onStartGame(botContext) {
+  if (!(botContext.chatID in botContext.sessions)) {
+    botContext.sessions = await db.makeSession(botContext);
+    startGame(botContext);
+  } else {
+    bot.sendMessage(botContext.chatID, botContext.translate("CONTINUE"));
+  }
+}
+
+async function onContinueGame(botContext) {
+  if (botContext.chatID in botContext.sessions) {
+    bot.sendMessage(
+      botContext.chatID,
+      botContext.translate("CONT_LETS_PLAY") +
+        [...botContext.sessions[botContext.chatID].spentCities].join(", ") +
+        botContext.translate("CONT_CITY_ON_LETTER") +
+        botContext.sessions[botContext.chatID].lastLetter.toUpperCase()
+    );
+  } else {
+    bot.sendMessage(botContext.chatID, botContext.translate("LIST_OF_COMMANDS"));
+  }
+}
+
+async function onNewGame(botContext) {
+  if (botContext.chatID in botContext.sessions) {
+    await db.deleteSession(botContext);
+    botContext.sessions = await db.makeSession(botContext);
+    startGame(botContext);
+  } else {
+    bot.sendMessage(botContext.chatID, botContext.translate("LIST_OF_COMMANDS"));
+  }
+}
+
+async function onStopGame(botContext) {
+  if (botContext.chatID in botContext.sessions) {
+    bot.sendMessage(
+      botContext.chatID,
+      botContext.translate("WIN_MESSAGE") +
+        [...botContext.sessions[botContext.chatID].spentCities].join(", ")
+    );
+    bot.sendMessage(botContext.chatID, botContext.translate("LETS_PLAY_AGAIN"));
+    await db.deleteSession(botContext);
+  } else {
+    bot.sendMessage(botContext.chatID, botContext.translate("LIST_OF_COMMANDS"));
+  }
+}
+
+async function startGame(botContext) {
+  const gStart = await game.start(botContext);
+
+  if (gStart.messages[1] === botContext.translate("ERR_SELECT_CITY")) {
+    bot.sendMessage(botContext.chatID, gStart.messages[1]);
+    bot.sendMessage(botContext.chatID, botContext.translate("LOOSE_MESSAGE"));
+    db.deleteSession(botContext);
     db.readProgressFromFile().then((result) => {
-      sessions = result;
+      botContext.sessions = result;
     });
   } else {
-    helpers.sendBulkMessages(bot, chatID, gStart.messages);
+    helpers.sendBulkMessages(bot, botContext.chatID, gStart.messages);
   }
 }
 
-async function processMessages(chatID, sessions, msg) {
-  const processEnteredCity = await game.processEnteredCity(chatID, sessions, msg);
+async function processMessages(botContext) {
+  const processEnteredCity = await game.processEnteredCity(botContext);
 
   if (processEnteredCity.errorMsg === "" && processEnteredCity.messages.length === 1) {
-    helpers.sendBulkMessages(bot, chatID, processEnteredCity.messages);
+    helpers.sendBulkMessages(bot, botContext.chatID, processEnteredCity.messages);
   }
   if (processEnteredCity.errorMsg === "" && processEnteredCity.messages.length > 1) {
-    helpers.sendBulkMessages(bot, chatID, processEnteredCity.messages);
-    db.deleteSession(chatID, sessions);
+    helpers.sendBulkMessages(bot, botContext.chatID, processEnteredCity.messages);
+    db.deleteSession(botContext);
     db.readProgressFromFile().then((result) => {
-      sessions = result;
+      botContext.sessions = result;
     });
   }
   if (processEnteredCity.errorMsg !== "") {
-    bot.sendMessage(chatID, processEnteredCity.errorMsg);
+    bot.sendMessage(botContext.chatID, processEnteredCity.errorMsg);
   }
 }
