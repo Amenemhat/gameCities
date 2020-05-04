@@ -2,7 +2,7 @@
   "LANGUAGE": "en",
   "WELCOME": "I greet you in the game Cities \nTo start a new game, write Start game",
   "CONTINUE": "You have an incomplete game \nTo continue, write Continue \nIf you want to start a new game, write Again",
-  "LIST_OF_COMMANDS": "The list of available commands: \n/ start \nStart game \nTo start the game, write Start game",
+  "LIST_OF_COMMANDS": "The list of available commands: \n/start \nStart game \nTo start the game, write Start game",
   "WIN_MESSAGE": "I won!!! \nCities that were named:\n",
   "LETS_PLAY_AGAIN": "Let's play some more! \nTo start, write Start game",
   "LOOSE_MESSAGE": "Game over \nLet's play again! \nTo start the game, write Start game",
