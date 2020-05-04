@@ -27,15 +27,15 @@ async function saveProgressToFile(sessions) {
   });
 }
 
-async function makeSession(sessions, botContext) {
-  sessions[botContext.chatID] = { spentCities: [], lastLetter: "" };
-  await saveProgressToFile(sessions);
-  return sessions;
+async function makeSession(botContext) {
+  botContext.sessions[botContext.chatID] = { spentCities: [], lastLetter: "" };
+  await saveProgressToFile(botContext.sessions);
+  return botContext.sessions;
 }
 
-async function deleteSession(sessions, botContext) {
-  delete sessions[botContext.chatID];
-  await saveProgressToFile(sessions);
+async function deleteSession(botContext) {
+  delete botContext.sessions[botContext.chatID];
+  await saveProgressToFile(botContext.sessions);
 }
 
 module.exports = {
