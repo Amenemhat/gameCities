@@ -28,7 +28,7 @@ async function saveProgressToFile(sessions) {
 }
 
 async function makeSession(botContext) {
-  botContext.sessions[botContext.chatID] = { spentCities: [], lastLetter: "" };
+  botContext.sessions[botContext.chatID] = { spentCities: [], lastLetter: "", scoreInSession: 0 };
   await saveProgressToFile(botContext.sessions);
   return botContext.sessions;
 }

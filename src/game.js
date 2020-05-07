@@ -32,12 +32,18 @@ async function checkCityInGoogle(botContext) {
   return null;
 }
 
-function checkCityInDB(botContext, letter) {
+async function checkCityInDB(botContext, letter) {
   if (letter !== botContext.text[0]) {
     return botContext.translate("ERR_CITY_ON_LETTER") + letter.toUpperCase();
   }
+
   if (botContext.sessions[botContext.chatID].spentCities.includes(botContext.text)) {
     return botContext.translate("ERR_THIS_IS_SPENT_CITY");
+  }
+
+  const checkCityInGoogleResult = await checkCityInGoogle(botContext);
+  if (checkCityInGoogleResult !== null) {
+    return checkCityInGoogleResult;
   }
   return null;
 }
@@ -90,13 +96,7 @@ async function processEnteredCity(botContext) {
     botContext.sessions = result;
   });
 
-  const checkCityInGoogleResult = await checkCityInGoogle(botContext);
-  if (checkCityInGoogleResult !== null) {
-    result.errorMsg = checkCityInGoogleResult;
-    return result;
-  }
-
-  const checkCityInDBResult = checkCityInDB(
+  const checkCityInDBResult = await checkCityInDB(
     botContext,
     botContext.sessions[botContext.chatID].lastLetter
   );
@@ -106,7 +106,9 @@ async function processEnteredCity(botContext) {
   }
 
   botContext.sessions[botContext.chatID].spentCities.push(botContext.text);
+  botContext.sessions[botContext.chatID].scoreInSession++;
   db.saveProgressToFile(botContext.sessions);
+
   const selectedCity = await selectCityByLetter(
     botContext,
     lastValidLetter(botContext.text, botContext)
