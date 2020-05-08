@@ -2,8 +2,8 @@ require("dotenv").config();
 const Client = require("@googlemaps/google-maps-services-js").Client;
 const client = new Client({});
 
-if (!process.env.GOOGLE_MAPS_API_KEY) {
-  throw new Error("GOOGLE_MAPS_API_KEY env variable is missing");
+if (!process.env.GOOGLE_MAPS_API_KEY3) {
+  throw new Error("GOOGLE_MAPS_API_KEY3 env variable is missing");
 }
 
 if (!process.env.GOOGLE_MAPS_API_KEY2) {
@@ -14,7 +14,7 @@ function findCities(botContext) {
   return client
     .findPlaceFromText({
       params: {
-        key: process.env.GOOGLE_MAPS_API_KEY2,
+        key: process.env.GOOGLE_MAPS_API_KEY3,
         input: botContext.text,
         inputtype: "textquery",
         fields: ["name"],
@@ -38,7 +38,7 @@ async function findCitiesByLetter(botContext, query) {
   return client
     .placeAutocomplete({
       params: {
-        key: process.env.GOOGLE_MAPS_API_KEY,
+        key: process.env.GOOGLE_MAPS_API_KEY2,
         input: query,
         types: "(cities)",
         language: botContext.lang,

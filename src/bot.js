@@ -3,6 +3,7 @@ const TelegramBot = require("node-telegram-bot-api");
 const game = require("./game.js");
 const helpers = require("./helpers.js");
 const db = require("./db.js");
+const score = require("./score.js");
 const I18nt = require("i18n-t");
 const i18nt = new I18nt({
   defaultLocale: "en",
@@ -20,10 +21,18 @@ bot.on("polling_error", (m) => {
 bot.on("message", onMessage);
 
 async function onMessage(msg) {
+  const userName = msg.from.first_name + " " + msg.from.last_name;
   const lang = msg.from.language_code;
   const localize = (key) => i18nt.t(lang, key);
-  const botContext = { translate: localize, chatID: msg.chat.id, text: msg.text.toLowerCase() };
+  const botContext = {
+    translate: localize,
+    chatID: msg.chat.id,
+    text: msg.text.toLowerCase(),
+    userName: userName,
+    hiScore: 0,
+  };
   botContext.sessions = await db.readProgressFromFile();
+  await score.getHiScore(botContext);
 
   switch (true) {
     case botContext.text.match(new RegExp(botContext.translate("CMD_START"), "i")) !== null:
@@ -42,6 +51,9 @@ async function onMessage(msg) {
     case botContext.text.match(new RegExp(botContext.translate("CMD_STOP_GAME"), "i")) !== null:
       onStopGame(botContext);
       return;
+    case botContext.text.match(new RegExp(botContext.translate("CMD_TOP_10"), "i")) !== null:
+      showTopScores(botContext);
+      return;
   }
 
   if (botContext.chatID in botContext.sessions) {
@@ -49,6 +61,22 @@ async function onMessage(msg) {
   } else {
     bot.sendMessage(botContext.chatID, botContext.translate("LIST_OF_COMMANDS"));
   }
+}
+
+async function showTopScores(botContext) {
+  const scoreFromFile = await score.readScoreFromFile();
+  const scoreBoard = [];
+
+  for (const key in scoreFromFile) {
+    scoreBoard.push(scoreFromFile[key].hiScore + " - " + scoreFromFile[key].userName);
+  }
+  scoreBoard.sort((a, b) => {
+    const a1 = a.split(" - ");
+    const b1 = b.split(" - ");
+    return b1[0] - a1[0];
+  });
+  scoreBoard.length = 10;
+  bot.sendMessage(botContext.chatID, botContext.translate("TOP_10") + scoreBoard.join("\n"));
 }
 
 async function onStart(botContext) {
@@ -101,7 +129,7 @@ async function onStopGame(botContext) {
         botContext.translate("SCORE_IN_SESSION") +
         botContext.sessions[botContext.chatID].scoreInSession +
         botContext.translate("BEST_SCORE") +
-        botContext.sessions[botContext.chatID].hiScore
+        botContext.hiScore
     );
     bot.sendMessage(botContext.chatID, botContext.translate("LETS_PLAY_AGAIN"));
     await db.deleteSession(botContext);

@@ -22,7 +22,7 @@ async function saveProgressToFile(sessions) {
 
   await fs.writeFile(progressFile, jsonContent, "utf8", function (err) {
     if (err) {
-      throw new Error(err);
+      throw new Error("Ошибка: " + err);
     }
   });
 }
@@ -32,7 +32,6 @@ async function makeSession(botContext) {
     spentCities: [],
     lastLetter: "",
     scoreInSession: 0,
-    hiScore: 0,
   };
   await saveProgressToFile(botContext.sessions);
   return botContext.sessions;

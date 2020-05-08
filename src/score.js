@@ -8,13 +8,24 @@ async function processScore(botContext) {
   if (botContext.chatID in scoreBoard) {
     if (score > scoreBoard[botContext.chatID].hiScore) {
       scoreBoard[botContext.chatID].hiScore = score;
-      botContext.sessions[botContext.chatID].hiScore = score;
+      botContext.hiScore = score;
     }
   } else {
-    scoreBoard[botContext.chatID] = { hiScore: score };
-    botContext.sessions[botContext.chatID].hiScore = score;
+    scoreBoard[botContext.chatID] = { hiScore: score, userName: botContext.userName };
+    botContext.hiScore = score;
   }
   await saveScoreToFile(scoreBoard);
+}
+
+async function getHiScore(botContext) {
+  const scoreBoard = await readScoreFromFile();
+  if (botContext.chatID in scoreBoard) {
+    botContext.hiScore = scoreBoard[botContext.chatID].hiScore;
+  } else {
+    scoreBoard[botContext.chatID] = { hiScore: 0, userName: botContext.userName };
+    botContext.hiScore = 0;
+    await saveScoreToFile(scoreBoard);
+  }
 }
 
 function readScoreFromFile() {
@@ -45,4 +56,6 @@ async function saveScoreToFile(score) {
 
 module.exports = {
   processScore,
+  readScoreFromFile,
+  getHiScore,
 };

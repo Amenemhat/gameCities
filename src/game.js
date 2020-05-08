@@ -104,10 +104,7 @@ async function processEnteredCity(botContext) {
 
   botContext.sessions[botContext.chatID].spentCities.push(botContext.text);
   botContext.sessions[botContext.chatID].scoreInSession++;
-  if (
-    botContext.sessions[botContext.chatID].scoreInSession >
-    botContext.sessions[botContext.chatID].hiScore
-  ) {
+  if (botContext.sessions[botContext.chatID].scoreInSession > botContext.hiScore) {
     result.messages.push(
       botContext.translate("NEW_RECORD") + botContext.sessions[botContext.chatID].scoreInSession
     );
@@ -127,7 +124,7 @@ async function processEnteredCity(botContext) {
         botContext.translate("SCORE_IN_SESSION") +
         botContext.sessions[botContext.chatID].scoreInSession +
         botContext.translate("BEST_SCORE") +
-        botContext.sessions[botContext.chatID].hiScore
+        botContext.hiScore
     );
     result.messages.push(botContext.translate("LETS_PLAY_AGAIN"));
     return result;
