@@ -97,7 +97,11 @@ async function onStopGame(botContext) {
     bot.sendMessage(
       botContext.chatID,
       botContext.translate("WIN_MESSAGE") +
-        [...botContext.sessions[botContext.chatID].spentCities].join(", ")
+        [...botContext.sessions[botContext.chatID].spentCities].join(", ") +
+        botContext.translate("SCORE_IN_SESSION") +
+        botContext.sessions[botContext.chatID].scoreInSession +
+        botContext.translate("BEST_SCORE") +
+        botContext.sessions[botContext.chatID].hiScore
     );
     bot.sendMessage(botContext.chatID, botContext.translate("LETS_PLAY_AGAIN"));
     await db.deleteSession(botContext);

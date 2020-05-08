@@ -1,6 +1,22 @@
 const fs = require("fs");
 const scoreFile = "./score.json";
 
+async function processScore(botContext) {
+  const score = botContext.sessions[botContext.chatID].scoreInSession;
+  const scoreBoard = await readScoreFromFile();
+
+  if (botContext.chatID in scoreBoard) {
+    if (score > scoreBoard[botContext.chatID].hiScore) {
+      scoreBoard[botContext.chatID].hiScore = score;
+      botContext.sessions[botContext.chatID].hiScore = score;
+    }
+  } else {
+    scoreBoard[botContext.chatID] = { hiScore: score };
+    botContext.sessions[botContext.chatID].hiScore = score;
+  }
+  await saveScoreToFile(scoreBoard);
+}
+
 function readScoreFromFile() {
   return new Promise((resolve, reject) => {
     fs.readFile(scoreFile, "utf8", function (err, data) {
@@ -28,6 +44,5 @@ async function saveScoreToFile(score) {
 }
 
 module.exports = {
-  readScoreFromFile,
-  saveScoreToFile,
+  processScore,
 };

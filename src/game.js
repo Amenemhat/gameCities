@@ -1,6 +1,7 @@
 const places_api = require("./places_api.js");
 const helpers = require("./helpers.js");
 const db = require("./db.js");
+const score = require("./score.js");
 
 function randomCity(arrCities) {
   return arrCities[helpers.getRandomNumber(arrCities.length)];
@@ -80,7 +81,7 @@ async function start(botContext) {
   ) {
     botContext.sessions[botContext.chatID].spentCities.push(selectedCity);
     botContext.sessions[botContext.chatID].lastLetter = lastValidLetter(selectedCity, botContext);
-    db.saveProgressToFile(botContext.sessions);
+    await db.saveProgressToFile(botContext.sessions);
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
 
     return result;
@@ -92,10 +93,6 @@ async function start(botContext) {
 
 async function processEnteredCity(botContext) {
   const result = { messages: [], errorMsg: "" };
-  await db.readProgressFromFile().then((result) => {
-    botContext.sessions = result;
-  });
-
   const checkCityInDBResult = await checkCityInDB(
     botContext,
     botContext.sessions[botContext.chatID].lastLetter
@@ -107,7 +104,16 @@ async function processEnteredCity(botContext) {
 
   botContext.sessions[botContext.chatID].spentCities.push(botContext.text);
   botContext.sessions[botContext.chatID].scoreInSession++;
-  db.saveProgressToFile(botContext.sessions);
+  if (
+    botContext.sessions[botContext.chatID].scoreInSession >
+    botContext.sessions[botContext.chatID].hiScore
+  ) {
+    result.messages.push(
+      botContext.translate("NEW_RECORD") + botContext.sessions[botContext.chatID].scoreInSession
+    );
+  }
+  await score.processScore(botContext);
+  await db.saveProgressToFile(botContext.sessions);
 
   const selectedCity = await selectCityByLetter(
     botContext,
@@ -117,14 +123,18 @@ async function processEnteredCity(botContext) {
   if (selectedCity === null || selectedCity === undefined) {
     result.messages.push(
       botContext.translate("LOOSE_BOT") +
-        [...botContext.sessions[botContext.chatID].spentCities].join(", ")
+        [...botContext.sessions[botContext.chatID].spentCities].join(", ") +
+        botContext.translate("SCORE_IN_SESSION") +
+        botContext.sessions[botContext.chatID].scoreInSession +
+        botContext.translate("BEST_SCORE") +
+        botContext.sessions[botContext.chatID].hiScore
     );
     result.messages.push(botContext.translate("LETS_PLAY_AGAIN"));
     return result;
   } else {
     botContext.sessions[botContext.chatID].spentCities.push(selectedCity);
     botContext.sessions[botContext.chatID].lastLetter = lastValidLetter(selectedCity, botContext);
-    db.saveProgressToFile(botContext.sessions);
+    await db.saveProgressToFile(botContext.sessions);
 
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
     return result;
