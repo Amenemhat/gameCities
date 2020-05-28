@@ -6,24 +6,23 @@ async function processScore(botContext) {
   const scoreBoard = await readScoreFromFile();
 
   if (botContext.chatID in scoreBoard) {
-    if (score > scoreBoard[botContext.chatID].hiScore) {
-      scoreBoard[botContext.chatID].hiScore = score;
-      botContext.hiScore = score;
+    if (score > scoreBoard[botContext.chatID].highScore) {
+      scoreBoard[botContext.chatID].highScore = score;
+      botContext.highScore = score;
     }
   } else {
-    scoreBoard[botContext.chatID] = { hiScore: score, userName: botContext.userName };
-    botContext.hiScore = score;
+    scoreBoard[botContext.chatID] = { highScore: score, userName: botContext.userName };
+    botContext.highScore = score;
   }
   await saveScoreToFile(scoreBoard);
 }
 
-async function getHiScore(botContext) {
+async function getHighScore(botContext) {
   const scoreBoard = await readScoreFromFile();
   if (botContext.chatID in scoreBoard) {
-    botContext.hiScore = scoreBoard[botContext.chatID].hiScore;
+    botContext.highScore = scoreBoard[botContext.chatID].highScore;
   } else {
-    scoreBoard[botContext.chatID] = { hiScore: 0, userName: botContext.userName };
-    botContext.hiScore = 0;
+    scoreBoard[botContext.chatID] = { highScore: 0, userName: botContext.userName };
     await saveScoreToFile(scoreBoard);
   }
 }
@@ -57,5 +56,5 @@ async function saveScoreToFile(score) {
 module.exports = {
   processScore,
   readScoreFromFile,
-  getHiScore,
+  getHighScore,
 };

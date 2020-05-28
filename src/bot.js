@@ -4,11 +4,9 @@ const game = require("./game.js");
 const helpers = require("./helpers.js");
 const db = require("./db.js");
 const score = require("./score.js");
-const I18nt = require("i18n-t");
-const i18nt = new I18nt({
-  defaultLocale: "en",
-});
-i18nt.load("locales");
+const i18next = require("i18next");
+const en = require("../locales/en.json");
+const ru = require("../locales/ru.json");
 
 if (!process.env.TELEGRAM_TOKEN) {
   throw new Error("TELEGRAM_TOKEN env variable is missing");
@@ -22,17 +20,30 @@ bot.on("message", onMessage);
 
 async function onMessage(msg) {
   const userName = msg.from.first_name + " " + msg.from.last_name;
-  const lang = msg.from.language_code;
-  const localize = (key) => i18nt.t(lang, key);
+
+  await i18next.init({
+    lng: msg.from.language_code,
+    debug: false,
+    resources: {
+      en: {
+        translation: en,
+      },
+      ru: {
+        translation: ru,
+      },
+    },
+  });
+
+  const localize = (key, args = {}) => i18next.t(key, args);
   const botContext = {
     translate: localize,
     chatID: msg.chat.id,
     text: msg.text.toLowerCase(),
     userName: userName,
-    hiScore: 0,
+    highScore: 0,
+    sessions: await db.readProgressFromFile(),
   };
-  botContext.sessions = await db.readProgressFromFile();
-  await score.getHiScore(botContext);
+  await score.getHighScore(botContext);
 
   switch (true) {
     case botContext.text.match(new RegExp(botContext.translate("CMD_START"), "i")) !== null:
@@ -68,7 +79,7 @@ async function showTopScores(botContext) {
   const scoreBoard = [];
 
   for (const key in scoreFromFile) {
-    scoreBoard.push(scoreFromFile[key].hiScore + " - " + scoreFromFile[key].userName);
+    scoreBoard.push(scoreFromFile[key].highScore + " - " + scoreFromFile[key].userName);
   }
   scoreBoard.sort((a, b) => {
     const a1 = a.split(" - ");
@@ -76,7 +87,10 @@ async function showTopScores(botContext) {
     return b1[0] - a1[0];
   });
   scoreBoard.length = 10;
-  bot.sendMessage(botContext.chatID, botContext.translate("TOP_10") + scoreBoard.join("\n"));
+  bot.sendMessage(
+    botContext.chatID,
+    botContext.translate("TOP_10", { scoreBoard: scoreBoard.join("\n") })
+  );
 }
 
 async function onStart(botContext) {
@@ -100,10 +114,10 @@ async function onContinueGame(botContext) {
   if (botContext.chatID in botContext.sessions) {
     bot.sendMessage(
       botContext.chatID,
-      botContext.translate("CONT_LETS_PLAY") +
-        [...botContext.sessions[botContext.chatID].spentCities].join(", ") +
-        botContext.translate("CONT_CITY_ON_LETTER") +
-        botContext.sessions[botContext.chatID].lastLetter.toUpperCase()
+      botContext.translate("CONT_LETS_PLAY", {
+        spentCities: [...botContext.sessions[botContext.chatID].spentCities].join(", "),
+        letter: botContext.sessions[botContext.chatID].lastLetter.toUpperCase(),
+      })
     );
   } else {
     bot.sendMessage(botContext.chatID, botContext.translate("LIST_OF_COMMANDS"));
@@ -124,12 +138,11 @@ async function onStopGame(botContext) {
   if (botContext.chatID in botContext.sessions) {
     bot.sendMessage(
       botContext.chatID,
-      botContext.translate("WIN_MESSAGE") +
-        [...botContext.sessions[botContext.chatID].spentCities].join(", ") +
-        botContext.translate("SCORE_IN_SESSION") +
-        botContext.sessions[botContext.chatID].scoreInSession +
-        botContext.translate("BEST_SCORE") +
-        botContext.hiScore
+      botContext.translate("WIN_MESSAGE", {
+        spentCities: [...botContext.sessions[botContext.chatID].spentCities].join(", "),
+        scoreInSession: botContext.sessions[botContext.chatID].scoreInSession,
+        highScore: botContext.highScore,
+      })
     );
     bot.sendMessage(botContext.chatID, botContext.translate("LETS_PLAY_AGAIN"));
     await db.deleteSession(botContext);

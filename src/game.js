@@ -25,17 +25,16 @@ async function checkCityInGoogle(botContext) {
     return botContext.translate("ERR_ENTER_ANOTHER_CITY");
   }
   if (botContext.text !== foundCity || foundCity === "zero_results") {
-    return (
-      botContext.translate("ERR_UNKNOWN_CITY") +
-      botContext.sessions[botContext.chatID].lastLetter.toUpperCase()
-    );
+    return botContext.translate("ERR_UNKNOWN_CITY", {
+      lastLetter: botContext.sessions[botContext.chatID].lastLetter.toUpperCase(),
+    });
   }
   return null;
 }
 
 async function checkCityInDB(botContext, letter) {
   if (letter !== botContext.text[0]) {
-    return botContext.translate("ERR_CITY_ON_LETTER") + letter.toUpperCase();
+    return botContext.translate("ERR_CITY_ON_LETTER", { letter: letter.toUpperCase() });
   }
 
   if (botContext.sessions[botContext.chatID].spentCities.includes(botContext.text)) {
@@ -52,7 +51,7 @@ async function checkCityInDB(botContext, letter) {
 async function selectCityByLetter(botContext, letter) {
   const findCities = await places_api.findCitiesByLetter(
     botContext,
-    botContext.translate("CITY") + letter
+    botContext.translate("CITY", { letter: letter })
   );
   const result = findCities.filter(
     (item) =>
@@ -104,9 +103,11 @@ async function processEnteredCity(botContext) {
 
   botContext.sessions[botContext.chatID].spentCities.push(botContext.text);
   botContext.sessions[botContext.chatID].scoreInSession++;
-  if (botContext.sessions[botContext.chatID].scoreInSession > botContext.hiScore) {
+  if (botContext.sessions[botContext.chatID].scoreInSession > botContext.highScore) {
     result.messages.push(
-      botContext.translate("NEW_RECORD") + botContext.sessions[botContext.chatID].scoreInSession
+      botContext.translate("NEW_RECORD", {
+        scoreInSession: botContext.sessions[botContext.chatID].scoreInSession,
+      })
     );
   }
   await score.processScore(botContext);
@@ -119,12 +120,11 @@ async function processEnteredCity(botContext) {
 
   if (selectedCity === null || selectedCity === undefined) {
     result.messages.push(
-      botContext.translate("LOOSE_BOT") +
-        [...botContext.sessions[botContext.chatID].spentCities].join(", ") +
-        botContext.translate("SCORE_IN_SESSION") +
-        botContext.sessions[botContext.chatID].scoreInSession +
-        botContext.translate("BEST_SCORE") +
-        botContext.hiScore
+      botContext.translate("LOOSE_BOT", {
+        spentCities: [...botContext.sessions[botContext.chatID].spentCities].join(", "),
+        scoreInSession: botContext.sessions[botContext.chatID].scoreInSession,
+        highScore: botContext.highScore,
+      })
     );
     result.messages.push(botContext.translate("LETS_PLAY_AGAIN"));
     return result;
