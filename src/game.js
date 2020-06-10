@@ -18,50 +18,46 @@ function lastValidLetter(str, botContext) {
   return lastLetter;
 }
 
-async function checkCityInGoogle(botContext) {
-  const foundCity = await places_api.findCities(botContext);
-
-  if (foundCity === "over_query_limit") {
-    return botContext.translate("ERR_ENTER_ANOTHER_CITY");
-  }
-  if (botContext.text !== foundCity || foundCity === "zero_results") {
-    return botContext.translate("ERR_UNKNOWN_CITY", {
-      lastLetter: botContext.sessions[botContext.chatID].lastLetter.toUpperCase(),
-    });
-  }
-  return null;
-}
-
 async function checkCityInDB(botContext, letter) {
   if (letter !== botContext.text[0]) {
     return botContext.translate("ERR_CITY_ON_LETTER", { letter: letter.toUpperCase() });
   }
-
   if (botContext.sessions[botContext.chatID].spentCities.includes(botContext.text)) {
     return botContext.translate("ERR_THIS_IS_SPENT_CITY");
   }
 
-  const checkCityInGoogleResult = await checkCityInGoogle(botContext);
-  if (checkCityInGoogleResult !== null) {
-    return checkCityInGoogleResult;
+  const { foundCities, status } = await places_api.findCitiesBy(
+    botContext,
+    botContext.translate("CITY", { letter: botContext.text })
+  );
+  if (
+    status === "OK" &&
+    foundCities.length > 0 &&
+    foundCities[0].toLowerCase() === botContext.text.toLowerCase()
+  ) {
+    return "OK";
   }
-  return null;
+  if (status === "OVER_QUERY_LIMIT") {
+    return botContext.translate("ERR_ENTER_ANOTHER_CITY");
+  }
+  return botContext.translate("ERR_UNKNOWN_CITY", {
+    lastLetter: letter.toUpperCase(),
+  });
 }
 
 async function selectCityByLetter(botContext, letter) {
-  const findCities = await places_api.findCitiesByLetter(
+  const { foundCities, status } = await places_api.findCitiesBy(
     botContext,
     botContext.translate("CITY", { letter: letter })
   );
-  const result = findCities.filter(
-    (item) =>
-      item[0] === letter && !botContext.sessions[botContext.chatID].spentCities.includes(item)
-  );
-
-  if (result.length === 0) {
-    return null;
-  } else {
+  if (status === "OK" && foundCities.length > 0) {
+    const result = foundCities.filter(
+      (item) =>
+        item[0] === letter && !botContext.sessions[botContext.chatID].spentCities.includes(item)
+    );
     return randomCity(result);
+  } else {
+    return null;
   }
 }
 
@@ -73,11 +69,7 @@ async function start(botContext) {
   const result = { messages: [] };
   result.messages.push(botContext.translate("START_GAME"));
 
-  if (
-    selectedCity !== null &&
-    selectedCity !== undefined &&
-    !botContext.sessions[botContext.chatID].spentCities.includes(selectedCity)
-  ) {
+  if (selectedCity !== null) {
     botContext.sessions[botContext.chatID].spentCities.push(selectedCity);
     botContext.sessions[botContext.chatID].lastLetter = lastValidLetter(selectedCity, botContext);
     await db.saveProgressToFile(botContext.sessions);
@@ -96,21 +88,22 @@ async function processEnteredCity(botContext) {
     botContext,
     botContext.sessions[botContext.chatID].lastLetter
   );
-  if (checkCityInDBResult !== null) {
+  if (checkCityInDBResult !== "OK") {
     result.errorMsg = checkCityInDBResult;
     return result;
   }
 
   botContext.sessions[botContext.chatID].spentCities.push(botContext.text);
   botContext.sessions[botContext.chatID].scoreInSession++;
+  await score.getHighScore(botContext);
   if (botContext.sessions[botContext.chatID].scoreInSession > botContext.highScore) {
+    await score.processScore(botContext);
     result.messages.push(
       botContext.translate("NEW_RECORD", {
         scoreInSession: botContext.sessions[botContext.chatID].scoreInSession,
       })
     );
   }
-  await score.processScore(botContext);
   await db.saveProgressToFile(botContext.sessions);
 
   const selectedCity = await selectCityByLetter(
@@ -118,7 +111,7 @@ async function processEnteredCity(botContext) {
     lastValidLetter(botContext.text, botContext)
   );
 
-  if (selectedCity === null || selectedCity === undefined) {
+  if (selectedCity === null) {
     result.messages.push(
       botContext.translate("LOOSE_BOT", {
         spentCities: [...botContext.sessions[botContext.chatID].spentCities].join(", "),

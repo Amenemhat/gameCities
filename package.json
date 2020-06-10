@@ -24,7 +24,7 @@
     "prettier": "^2.0.2"
   },
   "scripts": {
-    "start": "node src/bot.js",
+    "start": "node --inspect src/bot.js",
     "debug": "node --nolazy --inspect-brk=9229 src/bot.js",
     "eslintinit": "node_modules/.bin/eslint --init",
     "eslint": "node_modules/.bin/eslint --fix",

@@ -1,6 +1,6 @@
 const fs = require("fs");
 const progressFile = "./progress.json";
-
+//Make a global Progress obj
 function readProgressFromFile() {
   return new Promise((resolve, reject) => {
     fs.readFile(progressFile, "utf8", function (err, data) {

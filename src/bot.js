@@ -16,13 +16,9 @@ bot.on("polling_error", (m) => {
   throw new Error(m);
 });
 
-bot.on("message", onMessage);
-
-async function onMessage(msg) {
-  const userName = msg.from.first_name + " " + msg.from.last_name;
-
-  await i18next.init({
-    lng: msg.from.language_code,
+i18next
+  .init({
+    lng: "en",
     debug: false,
     resources: {
       en: {
@@ -32,9 +28,23 @@ async function onMessage(msg) {
         translation: ru,
       },
     },
+  })
+  .catch((e) => {
+    //console.error("i18next initialization failed", e);
+    throw e;
   });
 
-  const localize = (key, args = {}) => i18next.t(key, args);
+bot.on("message", (msg, ...args) => {
+  onMessage(msg, ...args).catch((e) => {
+    //console.error("onMessage fatal error!", e);
+    bot.sendMessage(msg.chat.id, "Ups, we have error! \n" + e);
+  });
+});
+
+async function onMessage(msg) {
+  const userName = msg.from.first_name + " " + msg.from.last_name;
+
+  const localize = await i18next.changeLanguage(msg.from.language_code);
   const botContext = {
     translate: localize,
     chatID: msg.chat.id,
@@ -43,7 +53,6 @@ async function onMessage(msg) {
     highScore: 0,
     sessions: await db.readProgressFromFile(),
   };
-  await score.getHighScore(botContext);
 
   switch (true) {
     case botContext.text.match(new RegExp(botContext.translate("CMD_START"), "i")) !== null:
@@ -136,6 +145,7 @@ async function onNewGame(botContext) {
 
 async function onStopGame(botContext) {
   if (botContext.chatID in botContext.sessions) {
+    await score.getHighScore(botContext);
     bot.sendMessage(
       botContext.chatID,
       botContext.translate("WIN_MESSAGE", {

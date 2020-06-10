@@ -1,6 +1,6 @@
 const fs = require("fs");
 const scoreFile = "./score.json";
-
+//Make a global score obj
 async function processScore(botContext) {
   const score = botContext.sessions[botContext.chatID].scoreInSession;
   const scoreBoard = await readScoreFromFile();
@@ -9,12 +9,13 @@ async function processScore(botContext) {
     if (score > scoreBoard[botContext.chatID].highScore) {
       scoreBoard[botContext.chatID].highScore = score;
       botContext.highScore = score;
+      await saveScoreToFile(scoreBoard);
     }
   } else {
     scoreBoard[botContext.chatID] = { highScore: score, userName: botContext.userName };
     botContext.highScore = score;
+    await saveScoreToFile(scoreBoard);
   }
-  await saveScoreToFile(scoreBoard);
 }
 
 async function getHighScore(botContext) {

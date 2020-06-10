@@ -22,31 +22,7 @@ function getGoogleApiKey() {
   }
 }
 
-function findCities(botContext) {
-  return client
-    .findPlaceFromText({
-      params: {
-        key: getGoogleApiKey(),
-        input: botContext.text,
-        inputtype: "textquery",
-        fields: ["name"],
-        language: botContext.lang,
-      },
-      timeout: 2000,
-    })
-    .then((response) => {
-      if (
-        response.data.status === "OK" &&
-        response.data.candidates[0].name.length === botContext.text.length
-      ) {
-        return response.data.candidates[0].name.toLowerCase();
-      } else {
-        return response.data.status.toLowerCase();
-      }
-    });
-}
-
-async function findCitiesByLetter(botContext, query) {
+async function findCitiesBy(botContext, query = "") {
   return client
     .placeAutocomplete({
       params: {
@@ -71,11 +47,11 @@ async function findCitiesByLetter(botContext, query) {
             return item;
           }
         });
-        return cities;
+        return { foundCities: cities, status: response.data.status };
       } else {
-        return [];
+        return { foundCities: [], status: response.data.status };
       }
     });
 }
 
-module.exports = { findCities, findCitiesByLetter };
+module.exports = { findCitiesBy };
