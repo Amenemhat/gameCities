@@ -1,47 +1,78 @@
 require("dotenv").config();
+const helpers = require("./helpers.js");
 const Client = require("@googlemaps/google-maps-services-js").Client;
 const client = new Client({});
+const citiesLocal = [
+  "Архангельск",
+  "Борисполь",
+  "Воронеж",
+  "Гюмри",
+  "Донецк",
+  "Енакиево",
+  "Жуковский",
+  "Запорожье",
+  "Изюм",
+  "Йошкар-Ола",
+  "Киев",
+  "Лондон",
+  "Москва",
+  "Николаев",
+  "Орёл",
+  "Париж",
+  "Ростов",
+  "Селидово",
+  "Трускавец",
+  "Уфа",
+  "Флоренция",
+  "Хабаровск",
+  "Цюрих",
+  "Челябинск",
+  "Шанхай",
+  "Щёлково",
+  "Ыгдыр",
+  "Электросталь",
+  "Юрмала",
+  "Ялта",
+];
 
-if (!process.env.GOOGLE_MAPS_API_KEY) {
-  throw new Error("GOOGLE_MAPS_API_KEY env variable is missing");
+function getGoogleApiKey() {
+  const keys = [
+    process.env.GOOGLE_MAPS_API_KEY0,
+    process.env.GOOGLE_MAPS_API_KEY1,
+    process.env.GOOGLE_MAPS_API_KEY2,
+    process.env.GOOGLE_MAPS_API_KEY3,
+    process.env.GOOGLE_MAPS_API_KEY4,
+    process.env.GOOGLE_MAPS_API_KEY5,
+    process.env.GOOGLE_MAPS_API_KEY6,
+  ];
+  const key = keys[helpers.getRandomNumber(6)];
+
+  if (!key) {
+    throw new Error("GOOGLE_MAPS_API_KEY env variable is missing");
+  } else {
+    return key;
+  }
+}
+function findCitiesLocal(botContext, letter = "") {
+  return {
+    foundCities: citiesLocal.filter(
+      (item) =>
+        item[0].toLowerCase() === letter &&
+        !botContext.sessions[botContext.chatID].spentCities.includes(item)
+    ),
+    status: "OK",
+  };
 }
 
-if (!process.env.GOOGLE_MAPS_API_KEY2) {
-  throw new Error("GOOGLE_MAPS_API_KEY2 env variable is missing");
-}
-
-function findCities(botContext) {
-  return client
-    .findPlaceFromText({
-      params: {
-        key: process.env.GOOGLE_MAPS_API_KEY2,
-        input: botContext.text,
-        inputtype: "textquery",
-        fields: ["name"],
-        language: botContext.lang,
-      },
-      timeout: 2000,
-    })
-    .then((response) => {
-      if (
-        response.data.status === "OK" &&
-        response.data.candidates[0].name.length === botContext.text.length
-      ) {
-        return response.data.candidates[0].name.toLowerCase();
-      } else {
-        return response.data.status.toLowerCase();
-      }
-    });
-}
-
-async function findCitiesByLetter(botContext, query) {
+async function findCitiesBy(botContext, query = "") {
   return client
     .placeAutocomplete({
       params: {
-        key: process.env.GOOGLE_MAPS_API_KEY,
+        key: getGoogleApiKey(),
         input: query,
         types: "(cities)",
         language: botContext.lang,
+        sensor: true,
       },
       timeout: 2000,
     })
@@ -59,11 +90,11 @@ async function findCitiesByLetter(botContext, query) {
             return item;
           }
         });
-        return cities;
+        return { foundCities: cities, status: response.data.status };
       } else {
-        return [];
+        return { foundCities: [], status: response.data.status };
       }
     });
 }
 
-module.exports = { findCities, findCitiesByLetter };
+module.exports = { findCitiesBy, findCitiesLocal };
