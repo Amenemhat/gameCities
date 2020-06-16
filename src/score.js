@@ -1,6 +1,6 @@
 const fs = require("fs");
 const scoreFile = "./score.json";
-//Make a global score obj
+
 async function processScore(botContext) {
   const score = botContext.sessions[botContext.chatID].scoreInSession;
   const scoreBoard = await readScoreFromFile();

@@ -19,17 +19,18 @@ function lastValidLetter(str, botContext) {
 }
 
 async function checkCityInDB(botContext, letter) {
-  if (letter !== botContext.text[0]) {
+  if (letter !== botContext.text[0].toLowerCase()) {
     return botContext.translate("ERR_CITY_ON_LETTER", { letter: letter.toUpperCase() });
   }
-  if (botContext.sessions[botContext.chatID].spentCities.includes(botContext.text)) {
+  if (botContext.sessions[botContext.chatID].spentCities.includes(botContext.text.toLowerCase())) {
     return botContext.translate("ERR_THIS_IS_SPENT_CITY");
   }
 
-  const { foundCities, status } = await places_api.findCitiesBy(
-    botContext,
-    botContext.translate("CITY", { letter: botContext.text })
-  );
+  // const { foundCities, status } = await places_api.findCitiesBy(
+  //   botContext,
+  //   botContext.translate("CITY", { letter: botContext.text })
+  // );
+  const { foundCities, status } = places_api.findCitiesLocal(botContext, letter);
   if (
     status === "OK" &&
     foundCities.length > 0 &&
@@ -46,14 +47,16 @@ async function checkCityInDB(botContext, letter) {
 }
 
 async function selectCityByLetter(botContext, letter) {
-  const { foundCities, status } = await places_api.findCitiesBy(
-    botContext,
-    botContext.translate("CITY", { letter: letter })
-  );
+  // const { foundCities, status } = await places_api.findCitiesBy(
+  //   botContext,
+  //   botContext.translate("CITY", { letter: letter })
+  // );
+  const { foundCities, status } = places_api.findCitiesLocal(botContext, letter);
   if (status === "OK" && foundCities.length > 0) {
     const result = foundCities.filter(
       (item) =>
-        item[0] === letter && !botContext.sessions[botContext.chatID].spentCities.includes(item)
+        item[0].toLowerCase() === letter &&
+        !botContext.sessions[botContext.chatID].spentCities.includes(item)
     );
     return randomCity(result);
   } else {
@@ -70,9 +73,9 @@ async function start(botContext) {
   result.messages.push(botContext.translate("START_GAME"));
 
   if (selectedCity !== null) {
-    botContext.sessions[botContext.chatID].spentCities.push(selectedCity);
+    botContext.sessions[botContext.chatID].spentCities.push(selectedCity.toLowerCase());
     botContext.sessions[botContext.chatID].lastLetter = lastValidLetter(selectedCity, botContext);
-    await db.saveProgressToFile(botContext.sessions);
+    await db.saveProgressToFile(botContext);
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
 
     return result;
@@ -93,7 +96,7 @@ async function processEnteredCity(botContext) {
     return result;
   }
 
-  botContext.sessions[botContext.chatID].spentCities.push(botContext.text);
+  botContext.sessions[botContext.chatID].spentCities.push(botContext.text.toLowerCase());
   botContext.sessions[botContext.chatID].scoreInSession++;
   await score.getHighScore(botContext);
   if (botContext.sessions[botContext.chatID].scoreInSession > botContext.highScore) {
@@ -104,7 +107,7 @@ async function processEnteredCity(botContext) {
       })
     );
   }
-  await db.saveProgressToFile(botContext.sessions);
+  await db.saveProgressToFile(botContext);
 
   const selectedCity = await selectCityByLetter(
     botContext,
@@ -122,9 +125,9 @@ async function processEnteredCity(botContext) {
     result.messages.push(botContext.translate("LETS_PLAY_AGAIN"));
     return result;
   } else {
-    botContext.sessions[botContext.chatID].spentCities.push(selectedCity);
+    botContext.sessions[botContext.chatID].spentCities.push(selectedCity.toLowerCase());
     botContext.sessions[botContext.chatID].lastLetter = lastValidLetter(selectedCity, botContext);
-    await db.saveProgressToFile(botContext.sessions);
+    await db.saveProgressToFile(botContext);
 
     result.messages.push(helpers.firstSymbolToUpperCase(selectedCity));
     return result;

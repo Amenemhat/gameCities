@@ -2,6 +2,38 @@ require("dotenv").config();
 const helpers = require("./helpers.js");
 const Client = require("@googlemaps/google-maps-services-js").Client;
 const client = new Client({});
+const citiesLocal = [
+  "Архангельск",
+  "Борисполь",
+  "Воронеж",
+  "Гюмри",
+  "Донецк",
+  "Енакиево",
+  "Жуковский",
+  "Запорожье",
+  "Изюм",
+  "Йошкар-Ола",
+  "Киев",
+  "Лондон",
+  "Москва",
+  "Николаев",
+  "Орёл",
+  "Париж",
+  "Ростов",
+  "Селидово",
+  "Трускавец",
+  "Уфа",
+  "Флоренция",
+  "Хабаровск",
+  "Цюрих",
+  "Челябинск",
+  "Шанхай",
+  "Щёлково",
+  "Ыгдыр",
+  "Электросталь",
+  "Юрмала",
+  "Ялта",
+];
 
 function getGoogleApiKey() {
   const keys = [
@@ -21,6 +53,16 @@ function getGoogleApiKey() {
     return key;
   }
 }
+function findCitiesLocal(botContext, letter = "") {
+  return {
+    foundCities: citiesLocal.filter(
+      (item) =>
+        item[0].toLowerCase() === letter &&
+        !botContext.sessions[botContext.chatID].spentCities.includes(item)
+    ),
+    status: "OK",
+  };
+}
 
 async function findCitiesBy(botContext, query = "") {
   return client
@@ -30,6 +72,7 @@ async function findCitiesBy(botContext, query = "") {
         input: query,
         types: "(cities)",
         language: botContext.lang,
+        sensor: true,
       },
       timeout: 2000,
     })
@@ -54,4 +97,4 @@ async function findCitiesBy(botContext, query = "") {
     });
 }
 
-module.exports = { findCitiesBy };
+module.exports = { findCitiesBy, findCitiesLocal };

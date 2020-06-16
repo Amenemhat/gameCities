@@ -1,26 +1,25 @@
 const fs = require("fs");
 const progressFile = "./progress.json";
-//Make a global Progress obj
-function readProgressFromFile() {
+
+async function readProgressFromFile() {
   return new Promise((resolve, reject) => {
-    fs.readFile(progressFile, "utf8", function (err, data) {
+    fs.readFile(progressFile, "utf8", (err, data) => {
       if (err) {
         reject(err);
+      }
+      if (data === "") {
+        resolve({});
       } else {
-        if (data === "") {
-          resolve({});
-        } else {
-          resolve(JSON.parse(data));
-        }
+        resolve(JSON.parse(data));
       }
     });
   });
 }
 
-async function saveProgressToFile(sessions) {
-  const jsonContent = JSON.stringify(sessions, null, "  ");
+async function saveProgressToFile(botContext) {
+  const jsonContent = JSON.stringify(botContext.sessions, null, "  ");
 
-  await fs.writeFile(progressFile, jsonContent, "utf8", function (err) {
+  fs.writeFile(progressFile, jsonContent, "utf8", function (err) {
     if (err) {
       throw new Error("Ошибка: " + err);
     }
@@ -33,13 +32,12 @@ async function makeSession(botContext) {
     lastLetter: "",
     scoreInSession: 0,
   };
-  await saveProgressToFile(botContext.sessions);
-  return botContext.sessions;
+  await saveProgressToFile(botContext);
 }
 
 async function deleteSession(botContext) {
   delete botContext.sessions[botContext.chatID];
-  await saveProgressToFile(botContext.sessions);
+  await saveProgressToFile(botContext);
 }
 
 module.exports = {
