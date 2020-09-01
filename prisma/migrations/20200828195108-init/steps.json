@@ -1,0 +1,17 @@
+{
+  "version": "0.3.14-fixed",
+  "steps": [
+    {
+      "tag": "UpdateField",
+      "model": "Sessions",
+      "field": "ChatID",
+      "type": "Float"
+    },
+    {
+      "tag": "UpdateField",
+      "model": "botContext",
+      "field": "ChatID",
+      "type": "Float"
+    }
+  ]
+}

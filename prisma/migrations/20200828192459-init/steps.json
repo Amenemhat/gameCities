@@ -1,0 +1,99 @@
+{
+  "version": "0.3.14-fixed",
+  "steps": [
+    {
+      "tag": "CreateField",
+      "model": "Sessions",
+      "field": "chatID",
+      "type": "Float",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "Sessions",
+          "field": "chatID"
+        },
+        "directive": "unique"
+      }
+    },
+    {
+      "tag": "DeleteField",
+      "model": "Sessions",
+      "field": "ChatID"
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "translate",
+      "type": "String",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "chatID",
+      "type": "Float",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "botContext",
+          "field": "chatID"
+        },
+        "directive": "unique"
+      }
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "text",
+      "type": "String",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "sessions",
+      "type": "Sessions",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "userName",
+      "type": "String",
+      "arity": "Required"
+    },
+    {
+      "tag": "DeleteField",
+      "model": "botContext",
+      "field": "Translate"
+    },
+    {
+      "tag": "DeleteField",
+      "model": "botContext",
+      "field": "ChatID"
+    },
+    {
+      "tag": "DeleteField",
+      "model": "botContext",
+      "field": "Text"
+    },
+    {
+      "tag": "DeleteField",
+      "model": "botContext",
+      "field": "Sessions"
+    },
+    {
+      "tag": "DeleteField",
+      "model": "botContext",
+      "field": "UserName"
+    }
+  ]
+}

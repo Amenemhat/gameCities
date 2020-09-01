@@ -1,0 +1,26 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = "***"
+}
+
+model Sessions {
+  id             Int     @default(autoincrement()) @id
+  ChatID         Float  @unique
+  spentCities    Json?
+  lastLetter     String?
+  scoreInSession Float?
+}
+
+model botContext {
+  id   Int    @default(autoincrement()) @id
+  Translate  String
+  ChatID Float  @unique
+  Text String
+  Sessions Sessions
+  UserName String
+  highScore Float
+}

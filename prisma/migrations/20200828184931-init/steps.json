@@ -1,0 +1,124 @@
+{
+  "version": "0.3.14-fixed",
+  "steps": [
+    {
+      "tag": "CreateModel",
+      "model": "botContext"
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "id",
+      "type": "Int",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "botContext",
+          "field": "id"
+        },
+        "directive": "default"
+      }
+    },
+    {
+      "tag": "CreateArgument",
+      "location": {
+        "tag": "Directive",
+        "path": {
+          "tag": "Field",
+          "model": "botContext",
+          "field": "id"
+        },
+        "directive": "default"
+      },
+      "argument": "",
+      "value": "autoincrement()"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "botContext",
+          "field": "id"
+        },
+        "directive": "id"
+      }
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "Translate",
+      "type": "String",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "ChatID",
+      "type": "Float",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "botContext",
+          "field": "ChatID"
+        },
+        "directive": "unique"
+      }
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "Text",
+      "type": "String",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "Sessions",
+      "type": "Sessions",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "UserName",
+      "type": "String",
+      "arity": "Required"
+    },
+    {
+      "tag": "CreateField",
+      "model": "botContext",
+      "field": "highScore",
+      "type": "Float",
+      "arity": "Required"
+    },
+    {
+      "tag": "DeleteModel",
+      "model": "Users"
+    },
+    {
+      "tag": "DeleteModel",
+      "model": "Profile"
+    },
+    {
+      "tag": "CreateDirective",
+      "location": {
+        "path": {
+          "tag": "Field",
+          "model": "Sessions",
+          "field": "ChatID"
+        },
+        "directive": "unique"
+      }
+    }
+  ]
+}

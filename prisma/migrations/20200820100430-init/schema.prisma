@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url = "***"
+}
+
+model Sessions {
+  id             Int     @default(autoincrement()) @id
+  ChatID         Float
+  spentCities    Json?
+  lastLetter     String?
+  scoreInSession Float?
+}
+
+model Users {
+  id        Int     @default(autoincrement()) @id
+  UserName  String?
+  ChatID    Float
+  Language  String?
+  HighScore Float?
+  profile  Profile?
+  email  String?   @unique
+}
+
+model Profile {
+  id   Int    @default(autoincrement()) @id
+  fullName  String
+  user Users
+}

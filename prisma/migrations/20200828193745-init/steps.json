@@ -1,0 +1,29 @@
+{
+  "version": "0.3.14-fixed",
+  "steps": [
+    {
+      "tag": "UpdateField",
+      "model": "Sessions",
+      "field": "scoreInSession",
+      "type": "Int"
+    },
+    {
+      "tag": "UpdateField",
+      "model": "Sessions",
+      "field": "ChatID",
+      "type": "Int"
+    },
+    {
+      "tag": "UpdateField",
+      "model": "botContext",
+      "field": "highScore",
+      "type": "Int"
+    },
+    {
+      "tag": "UpdateField",
+      "model": "botContext",
+      "field": "ChatID",
+      "type": "Int"
+    }
+  ]
+}

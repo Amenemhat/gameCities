@@ -17,6 +17,37 @@ bot.on("polling_error", (m) => {
   throw new Error(m);
 });
 
+// const session1 = {
+//   data: {
+//     spentCities: "{}", //1: 'Moscow', 2: 'Kiev', 3: 'Donetsk'
+//     lastLetter: "k",
+//     scoreInSession: 3,
+//     ChatID: 22,
+//   },
+// };
+
+// console.log("db.createSessionInDB()");
+// db.createSessionInDB(session1);
+
+console.log("db.getSessions()");
+db.getSessions();
+
+// const botContext1 = {
+//   data: {
+//     translate: "en",
+//     ChatID: 12345678,
+//     text: "Kharkov",
+//     userName: "Dmitriy Orlov",
+//     highScore: 5,
+//   },
+// };
+
+// console.log("db.createBotContextInDB()");
+// db.createBotContextInDB(botContext1);
+
+console.log("db.getBotContextInDB()");
+db.getBotContextInDB();
+
 i18next
   .init({
     lng: "en",
