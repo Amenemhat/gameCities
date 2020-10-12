@@ -1,0 +1,6 @@
+{
+    host : 'localhost',
+    user : 'postgres',
+    password : '123456',
+    database : 'game_sities_db'
+  }
