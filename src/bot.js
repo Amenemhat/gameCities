@@ -3,7 +3,6 @@ const TelegramBot = require("node-telegram-bot-api");
 const game = require("./game.js");
 const helpers = require("./helpers.js");
 const db = require("./db.js");
-const score = require("./score.js");
 const i18next = require("i18next");
 const en = require("../locales/en.json");
 const ru = require("../locales/ru.json");
@@ -37,7 +36,7 @@ i18next
 
 bot.on("message", (msg, ...args) => {
   onMessage(msg, ...args).catch((e) => {
-    //console.error("onMessage fatal error!", e);
+    console.error("onMessage fatal error!", e);
     bot.sendMessage(msg.chat.id, "Ups, we have error! \n" + e);
   });
 });
@@ -46,8 +45,8 @@ async function onMessage(msg) {
   const userName = msg.from.first_name + " " + msg.from.last_name;
   const localize = await i18next.changeLanguage(msg.from.language_code);
 
-  if (Object.keys(sessionsCache).length === 0) {
-    sessionsCache = await db.readProgressFromFile();
+  if (sessionsCache === {} || Object.keys(sessionsCache).length === 0) {
+    sessionsCache = await db.readProgressFromDB(msg.chat.id, userName);
   }
   const botContext = {
     translate: localize,
@@ -80,7 +79,7 @@ async function onMessage(msg) {
       return;
   }
 
-  if (botContext.chatID in botContext.sessions) {
+  if (botContext.sessions && botContext.chatID in botContext.sessions) {
     processMessages(botContext);
   } else {
     bot.sendMessage(botContext.chatID, botContext.translate("LIST_OF_COMMANDS"));
@@ -88,18 +87,12 @@ async function onMessage(msg) {
 }
 
 async function showTopScores(botContext) {
-  const scoreFromFile = await score.readScoreFromFile();
+  const scoreFromDB = await db.getTopScores(10);
   const scoreBoard = [];
 
-  for (const key in scoreFromFile) {
-    scoreBoard.push(scoreFromFile[key].highScore + " - " + scoreFromFile[key].userName);
+  for (const key in scoreFromDB) {
+    scoreBoard.push(scoreFromDB[key].highScore + " - " + scoreFromDB[key].userName);
   }
-  scoreBoard.sort((a, b) => {
-    const a1 = a.split(" - ");
-    const b1 = b.split(" - ");
-    return b1[0] - a1[0];
-  });
-  scoreBoard.length = 10;
   bot.sendMessage(
     botContext.chatID,
     botContext.translate("TOP_10", { scoreBoard: scoreBoard.join("\n") })
@@ -151,7 +144,7 @@ async function onNewGame(botContext) {
 
 async function onStopGame(botContext) {
   if (botContext.chatID in botContext.sessions) {
-    await score.getHighScore(botContext);
+    await db.readScoreFromDB(botContext);
     bot.sendMessage(
       botContext.chatID,
       botContext.translate("WIN_MESSAGE", {
@@ -190,7 +183,6 @@ async function processMessages(botContext) {
   }
   if (processEnteredCity.errorMsg === "" && processEnteredCity.messages.length > 1) {
     helpers.sendBulkMessages(bot, botContext.chatID, processEnteredCity.messages);
-    db.deleteSession(botContext);
     sessionsCache = {};
   }
   if (processEnteredCity.errorMsg !== "") {
